@@ -48,3 +48,48 @@ bool ArgumentationFramework::isConflictFree(const std::set<std::string>& extensi
     }
     return true;
 }
+
+
+bool ArgumentationFramework::defends(const std::string& arg, const std::set<std::string>& extension) const {
+    for (const auto& attack : attacks) {
+        if (attack.second == arg) { 
+            bool defended = false;
+            for (const auto& defender : extension) {
+                if (std::find(attacks.begin(), attacks.end(), std::make_pair(defender, attack.first)) != attacks.end()) {
+                    defended = true;
+                    break;
+                }
+            }
+            if (!defended) {
+                std::cout << "Argument '" << arg << "' is NOT defended by the extension.\n";
+                return false;
+            }
+        }
+    }
+    std::cout << "Argument '" << arg << "' is defended by the extension.\n";
+    return true;
+}
+
+
+bool ArgumentationFramework::isAdmissible(const std::set<std::string>& extension) const {
+    return isConflictFree(extension) && std::all_of(extension.begin(), extension.end(),
+        [this, &extension](const std::string& arg) { return defends(arg, extension); });
+}
+
+bool ArgumentationFramework::isComplete(const std::set<std::string>& extension) const {
+    if (!isAdmissible(extension)) {
+         std::cout << "not admissible" << std::endl;
+         return false;
+    }
+  
+    for (const auto& arg : arguments) {
+        if (defends(arg, extension)) {
+            if (extension.find(arg) == extension.end()) {
+                std::cout << "Argument '" << arg << "' is defended but not in the extension.\n";
+                return false;
+            }
+        }
+    }
+    return true;
+
+}
