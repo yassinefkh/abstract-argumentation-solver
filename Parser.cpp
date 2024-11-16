@@ -22,7 +22,7 @@ ArgumentationFramework Parser::parse() {
         } else if (line.rfind("att(", 0) == 0) { 
             size_t commaPos = line.find(',', 4);
             std::string arg1 = line.substr(4, commaPos - 4);
-            std::string arg2 = line.substr(commaPos + 1, line.size() - commaPos - 2);
+            std::string arg2 = line.substr(commaPos + 1, line.size() - commaPos - 3);
             af.addAttack(arg1, arg2);
         }
     }
