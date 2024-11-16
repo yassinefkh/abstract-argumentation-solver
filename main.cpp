@@ -2,20 +2,16 @@
 #include <iostream>
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " [input_file]\n";
-        return 1;
-    }
+    Parser parser("af2.txt");
+    ArgumentationFramework af = parser.parse();
+    af.display();
 
-    try {
-        Parser parser(argv[1]);
-
-        ArgumentationFramework af = parser.parse();
-
-        af.display();
-    } catch (const std::exception& e) {
-        std::cerr << "Erreur : " << e.what() << "\n";
-        return 1;
+    std::set<std::string> testExtension = {"a", "b"};
+    std::cout << "Testing conflict-free property for extension {a1, a3}:\n";
+    if (af.isConflictFree(testExtension)) {
+        std::cout << "The extension is conflict-free.\n";
+    } else {
+        std::cout << "The extension is NOT conflict-free.\n";
     }
 
     return 0;

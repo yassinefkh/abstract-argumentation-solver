@@ -31,6 +31,12 @@ void ArgumentationFramework::display() const {
 }
 
 bool ArgumentationFramework::isConflictFree(const std::set<std::string>& extension) const {
+    for (const auto& arg : extension) {
+        if (arguments.find(arg) == arguments.end()) {
+            std::cerr << "Error: Argument '" << arg << "' is not in the AF.\n";
+            return false;
+        }
+    }
     for (const auto& arg1 : extension) {
         for (const auto& arg2 : extension) {
             std::cout << "Checking attack: " << arg1 << " -> " << arg2 << "\n";
