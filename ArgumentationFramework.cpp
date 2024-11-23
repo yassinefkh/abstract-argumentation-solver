@@ -196,6 +196,7 @@ bool ArgumentationFramework::isStable(const std::set<std::string>& extension) co
     return true;
 }
 
+// TODO : DOUBLONS ICI avec l'ensemble vide 
 std::vector<std::set<std::string>> ArgumentationFramework::enumerateCompleteExtensions() const {
     std::vector<std::set<std::string>> completeExtensions;
     std::vector<std::string> args(arguments.begin(), arguments.end());
