@@ -94,6 +94,24 @@ bool ArgumentationFramework::isComplete(const std::set<std::string>& extension) 
 
 }
 
+bool ArgumentationFramework::isCredulousComplete(const std::string& argument) const {
+    std::vector<std::string> args(arguments.begin(), arguments.end());
+    size_t n = args.size();
+    for (size_t i = 0; i < (1 << n); ++i) { 
+        std::set<std::string> subset;
+        for (size_t j = 0; j < n; ++j) {
+            if (i & (1 << j)) {
+                subset.insert(args[j]);
+            }
+        }
+        if (isComplete(subset) && subset.find(argument) != subset.end()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 bool ArgumentationFramework::isStable(const std::set<std::string>& extension) const {
     if (!isConflictFree(extension)) return false;
     std::set<std::string> attacked;
@@ -112,6 +130,41 @@ bool ArgumentationFramework::isStable(const std::set<std::string>& extension) co
     return true;
 }
 
+std::vector<std::set<std::string>> ArgumentationFramework::enumerateCompleteExtensions() const {
+    std::vector<std::set<std::string>> completeExtensions;
+    std::vector<std::string> args(arguments.begin(), arguments.end());
+    size_t n = args.size();
+
+    // generate all subsets of arguments
+    for (size_t i = 0; i < (1 << n); ++i) { 
+        std::set<std::string> subset;
+        for (size_t j = 0; j < n; ++j) {
+            if (i & (1 << j)) {
+                subset.insert(args[j]);
+            }
+        }
+
+        // chick if the subset is a complete extension
+        if (isComplete(subset)) {
+            completeExtensions.push_back(subset);
+        }
+    }
+
+    return completeExtensions;
+}
+
+
+bool ArgumentationFramework::isSkepticalComplete(const std::string& argument) const {
+    std::vector<std::set<std::string>> completeExtensions = enumerateCompleteExtensions();
+
+    for (const auto& extension : completeExtensions) {
+        if (extension.find(argument) == extension.end()) {
+            return false; 
+        }
+    }
+
+    return true; 
+}
 
 
 std::set<std::string> ArgumentationFramework::findStableExtension() const {
