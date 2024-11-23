@@ -1,7 +1,6 @@
 arg(a).
 arg(b).
 arg(c).
-arg(d).
+att(b,a).
 att(a,b).
-att(b,c).
-att(b,d).
+att(a,c).
