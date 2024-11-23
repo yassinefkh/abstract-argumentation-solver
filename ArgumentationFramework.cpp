@@ -94,6 +94,7 @@ bool ArgumentationFramework::isComplete(const std::set<std::string>& extension) 
 
 }
 
+// TODO :  a OTPIMISER ! ici on fait une recherche exhaustive, mais si on a un argument non attaqué on sait qu'il apartient à toute extension complète 
 bool ArgumentationFramework::isCredulousComplete(const std::string& argument) const {
     std::vector<std::string> args(arguments.begin(), arguments.end());
     size_t n = args.size();
