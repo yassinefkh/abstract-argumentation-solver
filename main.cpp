@@ -21,20 +21,22 @@ int main(int argc, char* argv[]) {
         // Parse the input file and build the argumentation framework
         Parser parser(filename);
         ArgumentationFramework af = parser.parse();
-
         if (command == "SE-CO") {
-            // SE-CO: Give one complete extension
-            // std::cout << "Computing one complete extension (SE-CO):\n";
-            auto completeExtensions = af.enumerateCompleteExtensions();
-            std::cout << "Complete extensions: ";
-            for (const auto& ext : completeExtensions) {
-                std::cout << formatExtension(ext) << "\n";
-            }
-            if (!completeExtensions.empty()) {
-                std::cout << formatExtension(completeExtensions[0]) << "\n"; // Output one extension
-            } else {
+            
+            #if DEBUG
+                auto completeExtensions = af.enumerateCompleteExtensions();
+                std::cout << "All complete extensions:\n";
+                for (const auto& ext : completeExtensions) {
+                    std::cout << formatExtension(ext) << "\n";
+                }
+            #endif
+            auto completeExtension = af.findOneCompleteExtension();
+            if (completeExtension.empty() && af.enumerateCompleteExtensions().empty()) {
                 std::cout << "NO\n";
+            } else {
+                std::cout <<  formatExtension(completeExtension) << "\n";
             }
+                    
 
         } else if (command == "DC-CO") {
             // DC-CO: Check credulous acceptance in complete extensions
@@ -65,11 +67,18 @@ int main(int argc, char* argv[]) {
         } else if (command == "SE-ST") {
             // SE-ST: Give one stable extension
             //std::cout << "Computing one stable extension (SE-ST):\n";
-            auto stableExtension = af.findStableExtension();
+            #if DEBUG
+                auto stableExtensions = af.enumerateStableExtensions();
+                std::cout << "All stable extensions:\n";
+                for (const auto& ext : stableExtensions) {
+                    std::cout << formatExtension(ext) << "\n";
+                }
+            #endif
+           auto stableExtension = af.findOneStableExtension();
             if (!stableExtension.empty()) {
                 std::cout << formatExtension(stableExtension) << "\n";
             } else {
-                std::cout << "NO\n";
+                std::cout << "NO\n"; 
             }
 
         } else if (command == "DC-ST") {

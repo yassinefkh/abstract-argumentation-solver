@@ -1,6 +1,6 @@
 #ifndef UTILITY_H
 #define UTILITY_H
-#define DEBUG 0
+#define DEBUG 1
 
 #include <set>
 #include <string>

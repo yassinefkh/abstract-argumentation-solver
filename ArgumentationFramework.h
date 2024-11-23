@@ -23,7 +23,9 @@ public:
     std::set<std::string> findCompleteExtension() const;
     std::set<std::string> findStableExtension() const;
     std::vector<std::set<std::string>> enumerateCompleteExtensions() const;
-    
+    std::vector<std::set<std::string>> enumerateStableExtensions() const;
+    std::set<std::string> findOneStableExtension() const;
+    std::set<std::string> findOneCompleteExtension() const;
 
 
     bool isCredulousComplete(const std::string& argument) const;

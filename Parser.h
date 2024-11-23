@@ -8,7 +8,6 @@
 class Parser {
 public:
     Parser(const std::string& filename);
-
     ArgumentationFramework parse();
 
 private:
