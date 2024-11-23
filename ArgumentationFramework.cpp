@@ -93,3 +93,39 @@ bool ArgumentationFramework::isComplete(const std::set<std::string>& extension) 
     return true;
 
 }
+
+bool ArgumentationFramework::isStable(const std::set<std::string>& extension) const {
+    if (!isConflictFree(extension)) return false;
+    std::set<std::string> attacked;
+    for (const auto& arg : extension) {
+        for (const auto& attack : attacks) {
+            if (attack.first == arg) {
+                attacked.insert(attack.second);
+            }
+        }
+    }
+    for (const auto& arg : arguments) {
+        if (extension.find(arg) == extension.end() && attacked.find(arg) == attacked.end()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+
+std::set<std::string> ArgumentationFramework::findStableExtension() const {
+    std::vector<std::string> args(arguments.begin(), arguments.end());
+    size_t n = args.size();
+    for (size_t i = 0; i < (1 << n); ++i) { 
+        std::set<std::string> subset;
+        for (size_t j = 0; j < n; ++j) {
+            if (i & (1 << j)) {
+                subset.insert(args[j]);
+            }
+        }
+        if (isStable(subset)) return subset;
+    }
+    return {};
+}
+
