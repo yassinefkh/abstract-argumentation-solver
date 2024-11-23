@@ -4,71 +4,103 @@
 #include <iostream>
 #include <set>
 #include <string>
+#include <vector>
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <input_file>\n";
+    if (argc < 4 || (std::string(argv[2]) == "-p" && argc < 5)) {
+        std::cerr << "Usage: " << argv[0] << " -p COMMAND -f FILE [-a ARG]\n";
         return 1;
     }
 
-    std::string filename = argv[1];
+    // Parse command-line arguments
+    std::string command = argv[2];
+    std::string filename = argv[4];
+    std::string argument = argc == 7 ? argv[6] : ""; // Optional argument for DC-XX and DS-XX
 
     try {
-        // parse the input file and build the argumentation framework
+        // Parse the input file and build the argumentation framework
         Parser parser(filename);
         ArgumentationFramework af = parser.parse();
-        af.display();
 
-        // extensions to test
-        std::set<std::string> conflictFreeTest = {"a"};
-        std::set<std::string> admissibleTest = {"a"};
-        std::set<std::string> completeTest = {"a", "b", "c"};
-        std::set<std::string> stableTest = {"c", "b"};
+        if (command == "SE-CO") {
+            // SE-CO: Give one complete extension
+            // std::cout << "Computing one complete extension (SE-CO):\n";
+            auto completeExtensions = af.enumerateCompleteExtensions();
+            std::cout << "Complete extensions: ";
+            for (const auto& ext : completeExtensions) {
+                std::cout << formatExtension(ext) << "\n";
+            }
+            if (!completeExtensions.empty()) {
+                std::cout << formatExtension(completeExtensions[0]) << "\n"; // Output one extension
+            } else {
+                std::cout << "NO\n";
+            }
 
-        // test conflict-free 
-        std::cout << "\nTesting conflict-free property for extension " 
-                  << formatExtension(conflictFreeTest) << ":\n";
-        if (af.isConflictFree(conflictFreeTest)) {
-            std::cout << "The extension is conflict-free.\n";
+        } else if (command == "DC-CO") {
+            // DC-CO: Check credulous acceptance in complete extensions
+            if (argument.empty()) {
+                std::cerr << "Error: Argument required for DC-CO.\n";
+                return 1;
+            }
+            //std::cout << "Checking credulous acceptance (DC-CO) for argument '" << argument << "':\n";
+            if (af.isCredulousComplete(argument)) {
+                std::cout << "YES\n";
+            } else {
+                std::cout << "NO\n";
+            }
+
+        } else if (command == "DS-CO") {
+            // DS-CO: Check skeptical acceptance in complete extensions
+            if (argument.empty()) {
+                std::cerr << "Error: Argument required for DS-CO.\n";
+                return 1;
+            }
+            //std::cout << "Checking skeptical acceptance (DS-CO) for argument '" << argument << "':\n";
+            if (af.isSkepticalComplete(argument)) {
+                std::cout << "YES\n";
+            } else {
+                std::cout << "NO\n";
+            }
+
+        } else if (command == "SE-ST") {
+            // SE-ST: Give one stable extension
+            //std::cout << "Computing one stable extension (SE-ST):\n";
+            auto stableExtension = af.findStableExtension();
+            if (!stableExtension.empty()) {
+                std::cout << formatExtension(stableExtension) << "\n";
+            } else {
+                std::cout << "NO\n";
+            }
+
+        } else if (command == "DC-ST") {
+            // DC-ST: Check credulous acceptance in stable extensions
+            if (argument.empty()) {
+                std::cerr << "Error: Argument required for DC-ST.\n";
+                return 1;
+            }
+            //std::cout << "Checking credulous acceptance (DC-ST) for argument '" << argument << "':\n";
+            if (af.isCredulousStable(argument)) {
+                std::cout << "YES\n";
+            } else {
+                std::cout << "NO\n";
+            }
+
+        } else if (command == "DS-ST") {
+            // DS-ST: Check skeptical acceptance in stable extensions
+            if (argument.empty()) {
+                std::cerr << "Error: Argument required for DS-ST.\n";
+                return 1;
+            }
+            //std::cout << "Checking skeptical acceptance (DS-ST) for argument '" << argument << "':\n";
+            if (af.isSkepticalStable(argument)) {
+                std::cout << "YES\n";
+            } else {
+                std::cout << "NO\n";
+            }
+
         } else {
-            std::cout << "The extension is not conflict-free.\n";
-        }
-
-        // test admissibility
-        std::cout << "\nTesting admissibility for extension " 
-                  << formatExtension(admissibleTest) << ":\n";
-        if (af.isAdmissible(admissibleTest)) {
-            std::cout << "The extension is admissible.\n";
-        } else {
-            std::cout << "The extension is not admissible.\n";
-        }
-
-        // test completeness
-        std::cout << "\nTesting completeness for extension " 
-                  << formatExtension(completeTest) << ":\n";
-        if (af.isComplete(completeTest)) {
-            std::cout << "The extension is complete.\n";
-        } else {
-            std::cout << "The extension is not complete.\n";
-        }
-
-        // test stability
-        std::cout << "\nTesting stability for extension " 
-                  << formatExtension(stableTest) << ":\n";
-        if (af.isStable(stableTest)) {
-            std::cout << "The extension is stable.\n";
-        } else {
-            std::cout << "The extension is not stable.\n";
-        }
-
-        // find and display a stable extension
-        std::cout << "\nSearching for a stable extension:\n";
-        std::set<std::string> stableExtension = af.findStableExtension();
-        if (!stableExtension.empty()) {
-            std::cout << "Found stable extension: " 
-                      << formatExtension(stableExtension) << "\n";
-        } else {
-            std::cout << "No stable extension found.\n";
+            std::cerr << "Error: Unknown command '" << command << "'.\n";
+            return 1;
         }
 
     } catch (const std::exception& e) {

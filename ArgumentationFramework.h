@@ -28,7 +28,9 @@ public:
 
     bool isCredulousComplete(const std::string& argument) const;
     bool isSkepticalComplete(const std::string& argument) const;
-
+    bool isSkepticalCompleteBis(const std::string& argument) const;
+    bool isSkepticalStable(const std::string& argument) const;
+    bool isCredulousStable(const std::string& argument) const;
     
     void display() const;
 

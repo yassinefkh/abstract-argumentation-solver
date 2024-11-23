@@ -1,4 +1,5 @@
 #include "Parser.h"
+#include "utility.h"
 #include <fstream>
 #include <algorithm>
 
@@ -17,12 +18,18 @@ ArgumentationFramework Parser::parse() {
         line.erase(remove_if(line.begin(), line.end(), isspace), line.end());
 
         if (line.rfind("arg(", 0) == 0) { 
-            std::string arg = line.substr(4, line.size() - 5);
+            std::string arg = line.substr(4, line.size() - 6);
+#if DEBUG
+            std::cout << "Parsed argument: [" << arg << "]\n";
+#endif
             af.addArgument(arg);
         } else if (line.rfind("att(", 0) == 0) { 
             size_t commaPos = line.find(',', 4);
             std::string arg1 = line.substr(4, commaPos - 4);
             std::string arg2 = line.substr(commaPos + 1, line.size() - commaPos - 3);
+#if DEBUG
+            std::cout << "Parsed attack: (" << arg1 << " -> " << arg2 << ")\n";
+#endif
             af.addAttack(arg1, arg2);
         }
     }
