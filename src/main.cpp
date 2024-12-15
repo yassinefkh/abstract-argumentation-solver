@@ -6,113 +6,129 @@
 #include <string>
 #include <vector>
 
-int main(int argc, char* argv[]) {
-    if (argc < 4 || (std::string(argv[2]) == "-p" && argc < 5)) {
+int main(int argc, char *argv[])
+{
+    if (argc < 4 || (std::string(argv[2]) == "-p" && argc < 5))
+    {
         std::cerr << "Usage: " << argv[0] << " -p COMMAND -f FILE [-a ARG]\n";
         return 1;
     }
 
-    // Parse command-line arguments
     std::string command = argv[2];
     std::string filename = argv[4];
-    std::string argument = argc == 7 ? argv[6] : ""; // Optional argument for DC-XX and DS-XX
+    std::string argument = argc == 7 ? argv[6] : "";
 
-    try {
-        // Parse the input file and build the argumentation framework
+    try
+    {
         Parser parser(filename);
         ArgumentationFramework af = parser.parse();
-        if (command == "SE-CO") {
-            
-            #if DEBUG
-                auto completeExtensions = af.enumerateCompleteExtensions();
-                std::cout << "All complete extensions:\n";
-                for (const auto& ext : completeExtensions) {
-                    std::cout << formatExtension(ext) << "\n";
-                }
-            #endif
-            auto completeExtension = af.findOneCompleteExtension();
-            if (completeExtension.empty() && af.enumerateCompleteExtensions().empty()) {
-                std::cout << "NO\n";
-            } else {
-                std::cout <<  formatExtension(completeExtension) << "\n";
-            }
-                    
 
-        } else if (command == "DC-CO") {
-            // DC-CO: Check credulous acceptance in complete extensions
-            if (argument.empty()) {
+        if (command == "DC-CO")
+        {
+            if (argument.empty())
+            {
                 std::cerr << "Error: Argument required for DC-CO.\n";
                 return 1;
             }
-            //std::cout << "Checking credulous acceptance (DC-CO) for argument '" << argument << "':\n";
-            if (af.isCredulousComplete(argument)) {
-                std::cout << "YES\n";
-            } else {
-                std::cout << "NO\n";
-            }
 
-        } else if (command == "DS-CO") {
-            // DS-CO: Check skeptical acceptance in complete extensions
-            if (argument.empty()) {
+            int bruteForceCounter = 0, characteristicCounter = 0;
+
+            bool resultBrute = af.isCredulousComplete(argument, bruteForceCounter);
+            std::cout << "Brute-Force Result: " << (resultBrute ? "YES" : "NO") << "\n";
+            std::cout << "States explored (Brute-Force): " << bruteForceCounter << "\n";
+
+            bool resultCharacteristic = af.isCredulousCompletePlus(argument, characteristicCounter);
+            std::cout << "Characteristic Function Result: " << (resultCharacteristic ? "YES" : "NO") << "\n";
+            std::cout << "States explored (Characteristic): " << characteristicCounter << "\n";
+        }
+        else if (command == "DS-CO")
+        {
+            if (argument.empty())
+            {
                 std::cerr << "Error: Argument required for DS-CO.\n";
                 return 1;
             }
-            //std::cout << "Checking skeptical acceptance (DS-CO) for argument '" << argument << "':\n";
-            if (af.isSkepticalComplete(argument)) {
-                std::cout << "YES\n";
-            } else {
-                std::cout << "NO\n";
-            }
 
-        } else if (command == "SE-ST") {
-            // SE-ST: Give one stable extension
-            //std::cout << "Computing one stable extension (SE-ST):\n";
-            #if DEBUG
-                auto stableExtensions = af.enumerateStableExtensions();
-                std::cout << "All stable extensions:\n";
-                for (const auto& ext : stableExtensions) {
-                    std::cout << formatExtension(ext) << "\n";
-                }
-            #endif
-           auto stableExtension = af.findOneStableExtension();
-            if (!stableExtension.empty()) {
-                std::cout << formatExtension(stableExtension) << "\n";
-            } else {
-                std::cout << "NO\n"; 
-            }
+            int bruteForceCounter = 0, characteristicCounter = 0;
 
-        } else if (command == "DC-ST") {
-            // DC-ST: Check credulous acceptance in stable extensions
-            if (argument.empty()) {
+            bool bruteForceResult = af.isSkepticalComplete(argument, bruteForceCounter);
+            std::cout << "Brute-Force Result: " << (bruteForceResult ? "YES" : "NO") << "\n";
+            std::cout << "States explored (Brute-Force): " << bruteForceCounter << "\n";
+
+            bool characteristicResult = af.isSkepticalCompletePlus(argument, characteristicCounter);
+            std::cout << "Characteristic Function Result: " << (characteristicResult ? "YES" : "NO") << "\n";
+            std::cout << "States explored (Characteristic): " << characteristicCounter << "\n";
+        }
+        else if (command == "SE-CO")
+        {
+            int bruteForceCounter = 0, characteristicCounter = 0;
+
+            auto bruteForceExtension = af.findOneCompleteExtension(bruteForceCounter);
+            std::cout << "Brute-Force Extension: " << formatExtension(bruteForceExtension) << "\n";
+            std::cout << "States explored (Brute-Force): " << bruteForceCounter << "\n";
+
+            auto characteristicExtension = af.findCompleteExtensionPlus(characteristicCounter);
+            std::cout << "Characteristic Function Extension: " << formatExtension(characteristicExtension) << "\n";
+            std::cout << "States explored (Characteristic): " << characteristicCounter << "\n";
+        }
+        else if (command == "DC-ST")
+        {
+            if (argument.empty())
+            {
                 std::cerr << "Error: Argument required for DC-ST.\n";
                 return 1;
             }
-            //std::cout << "Checking credulous acceptance (DC-ST) for argument '" << argument << "':\n";
-            if (af.isCredulousStable(argument)) {
-                std::cout << "YES\n";
-            } else {
-                std::cout << "NO\n";
-            }
 
-        } else if (command == "DS-ST") {
-            // DS-ST: Check skeptical acceptance in stable extensions
-            if (argument.empty()) {
+            int bruteForceCounter = 0, characteristicCounter = 0;
+
+            bool resultBrute = af.isCredulousStable(argument, bruteForceCounter);
+            std::cout << "Brute-Force Result: " << (resultBrute ? "YES" : "NO") << "\n";
+            std::cout << "States explored (Brute-Force): " << bruteForceCounter << "\n";
+
+            bool resultCharacteristic = af.isCredulousStablePlus(argument, characteristicCounter);
+            std::cout << "Characteristic Function Result: " << (resultCharacteristic ? "YES" : "NO") << "\n";
+            std::cout << "States explored (Characteristic): " << characteristicCounter << "\n";
+        }
+        else if (command == "DS-ST")
+        {
+            if (argument.empty())
+            {
                 std::cerr << "Error: Argument required for DS-ST.\n";
                 return 1;
             }
-            //std::cout << "Checking skeptical acceptance (DS-ST) for argument '" << argument << "':\n";
-            if (af.isSkepticalStable(argument)) {
-                std::cout << "YES\n";
-            } else {
-                std::cout << "NO\n";
-            }
 
-        } else {
+            int bruteForceCounter = 0, characteristicCounter = 0;
+
+            bool resultBrute = af.isSkepticalStable(argument, bruteForceCounter);
+            std::cout << "Brute-Force Result: " << (resultBrute ? "YES" : "NO") << "\n";
+            std::cout << "States explored (Brute-Force): " << bruteForceCounter << "\n";
+
+            bool resultCharacteristic = af.isSkepticalStablePlus(argument, characteristicCounter);
+            std::cout << "Characteristic Function Result: " << (resultCharacteristic ? "YES" : "NO") << "\n";
+            std::cout << "States explored (Characteristic): " << characteristicCounter << "\n";
+        }
+        else if (command == "SE-ST")
+        {
+            int bruteForceCounter = 0, characteristicCounter = 0;
+
+            // approche brute-force
+            auto bruteForceExtension = af.findOneStableExtension(bruteForceCounter);
+            std::cout << "Brute-Force Extension: " << formatExtension(bruteForceExtension) << "\n";
+            std::cout << "States explored (Brute-Force): " << bruteForceCounter << "\n";
+
+            // version avec fonction caractèristique
+            auto characteristicExtension = af.findStableExtensionPlus(characteristicCounter);
+            std::cout << "Characteristic Function Extension: " << formatExtension(characteristicExtension) << "\n";
+            std::cout << "States explored (Characteristic): " << characteristicCounter << "\n";
+        }
+        else
+        {
             std::cerr << "Error: Unknown command '" << command << "'.\n";
             return 1;
         }
-
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception &e)
+    {
         std::cerr << "Error: " << e.what() << "\n";
         return 1;
     }
