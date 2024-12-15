@@ -127,3 +127,12 @@ TEST_CASE("Test for two graphs") {
         );
     }
 }
+
+
+
+/*
+
+POUR LA COMPILATION : 
+g++ -std=c++17 -o test_runner tests/ArgumentationFrameworkTest.cpp src/ArgumentationFramework.cpp src/utility.cpp -I include
+puis : ./test_runner
+*/
