@@ -5,6 +5,8 @@
 #include <map>
 #include <stdexcept>
 #include <algorithm>
+#include <unordered_map>
+#include <queue>
 
 // ------------------------------------
 // AJOUT D'ARGUMENTS ET ATTAQUES
@@ -112,9 +114,6 @@ bool ArgumentationFramework::isStable(const std::set<std::string>& extension) co
     return true;
 }
 
-
-
-
 // ------------------------------------
 // ENUMERATION NAIVE DES EXTENSIONS
 // ------------------------------------
@@ -137,31 +136,6 @@ std::vector<std::set<std::string>> ArgumentationFramework::enumerateCompleteExte
     return extensions;
 }
 
-std::vector<std::set<std::string>> ArgumentationFramework::enumerateCompleteExtensionsWithEarlyStop(
-    const std::string& targetArg, int& counter, bool& found) const {
-    counter = 0;
-    std::vector<std::set<std::string>> extensions;
-    size_t n = arguments.size();
-
-    for (size_t i = 0; i < (1 << n); ++i) {
-        counter++;
-        std::set<std::string> subset;
-        for (size_t j = 0; j < n; ++j) {
-            if (i & (1 << j)) subset.insert(arguments[j]);
-        }
-        if (isComplete(subset)) {
-            extensions.push_back(subset);
-            if (subset.find(targetArg) != subset.end()) {
-                found = true;
-                return extensions; // Arrêt immédiat si une extension contenant `targetArg` est trouvée
-            }
-        }
-    }
-    found = false;
-    return extensions;
-}
-
-
 std::vector<std::set<std::string>> ArgumentationFramework::enumerateStableExtensions(int& counter) const {
     counter = 0;
     std::vector<std::set<std::string>> extensions;
@@ -180,93 +154,23 @@ std::vector<std::set<std::string>> ArgumentationFramework::enumerateStableExtens
     return extensions;
 }
 
-std::vector<std::set<std::string>> ArgumentationFramework::enumerateStableExtensionsWithEarlyStop(
-    const std::string& targetArg, int& counter, bool& found) const {
-    counter = 0;
-    std::vector<std::set<std::string>> extensions;
-    size_t n = arguments.size();
-
-    for (size_t i = 0; i < (1 << n); ++i) {
-        counter++;
-        std::set<std::string> subset;
-        for (size_t j = 0; j < n; ++j) {
-            if (i & (1 << j)) subset.insert(arguments[j]);
-        }
-        if (isStable(subset)) {
-            extensions.push_back(subset);
-            if (subset.find(targetArg) != subset.end()) {
-                found = true;
-                return extensions; // Arrêt immédiat si une extension contenant `targetArg` est trouvée
-            }
-        }
-    }
-    found = false;
-    return extensions;
-}
-
-
-/* std::set<std::string> ArgumentationFramework::findOneCompleteExtension(int& counter) const {
+std::set<std::string> ArgumentationFramework::findOneCompleteExtension(int& counter) const {
     auto extensions = enumerateCompleteExtensions(counter);
     if (!extensions.empty()) {
         std::srand(static_cast<unsigned>(std::time(nullptr)));
         return extensions[std::rand() % extensions.size()];
     }
     return {};
-} */
+}
 
-
-/* std::set<std::string> ArgumentationFramework::findOneStableExtension(int& counter) const {
+std::set<std::string> ArgumentationFramework::findOneStableExtension(int& counter) const {
     auto extensions = enumerateStableExtensions(counter);
     if (!extensions.empty()) {
         std::srand(static_cast<unsigned>(std::time(nullptr)));
         return extensions[std::rand() % extensions.size()];
     }
     return {};
-} */
-
-std::set<std::string> ArgumentationFramework::findOneStableExtension(int& counter) const {
-    return findOneStableExtensionWithEarlyStop(counter);
 }
-
-std::set<std::string> ArgumentationFramework::findOneStableExtensionWithEarlyStop(int& counter) const {
-    counter = 0;
-    size_t n = arguments.size();
-
-    for (size_t i = 0; i < (1 << n); ++i) {
-        counter++;
-        std::set<std::string> subset;
-        for (size_t j = 0; j < n; ++j) {
-            if (i & (1 << j)) subset.insert(arguments[j]);
-        }
-        if (isStable(subset)) {
-            return subset; // Retourne immédiatement la première extension stable trouvée
-        }
-    }
-    return {}; // Retourne un ensemble vide si aucune extension stable n'est trouvée
-}
-
-std::set<std::string> ArgumentationFramework::findOneCompleteExtensionWithEarlyStop(int& counter) const {
-    counter = 0;
-    size_t n = arguments.size();
-
-    for (size_t i = 0; i < (1 << n); ++i) {
-        counter++;
-        std::set<std::string> subset;
-        for (size_t j = 0; j < n; ++j) {
-            if (i & (1 << j)) subset.insert(arguments[j]);
-        }
-        if (isComplete(subset)) {
-            return subset; // Retourne immédiatement la première extension complète trouvée
-        }
-    }
-    return {}; // Retourne un ensemble vide si aucune extension complète n'est trouvée
-}
-
-std::set<std::string> ArgumentationFramework::findOneCompleteExtension(int& counter) const {
-    return findOneCompleteExtensionWithEarlyStop(counter);
-}
-
-
 
 // ------------------------------------
 // APPROCHE NAIVE : CREDULOUS & SKEPTICAL
@@ -280,13 +184,6 @@ bool ArgumentationFramework::isCredulousComplete(const std::string& argument, in
     }
     return false;
 }
-
-bool ArgumentationFramework::isCredulousCompleteEarlyStop(const std::string& argument, int& counter) const {
-    bool found = false;
-    enumerateCompleteExtensionsWithEarlyStop(argument, counter, found);
-    return found;
-}
-
 
 bool ArgumentationFramework::isSkepticalComplete(const std::string& argument, int& counter) const {
     counter = 0;
@@ -305,13 +202,6 @@ bool ArgumentationFramework::isCredulousStable(const std::string& argument, int&
     }
     return false;
 }
-
-bool ArgumentationFramework::isCredulousStableEarlyStop(const std::string& argument, int& counter) const {
-    bool found = false;
-    enumerateStableExtensionsWithEarlyStop(argument, counter, found);
-    return found;
-}
-
 
 bool ArgumentationFramework::isSkepticalStable(const std::string& argument, int& counter) const {
     counter = 0;
@@ -594,7 +484,116 @@ std::set<std::string> ArgumentationFramework::findStableExtensionPlus(int& count
 
 
 
+// ------------------------------------
+// APPROCHE LABELLING   
+// ------------------------------------
 
 
+bool ArgumentationFramework::isAcyclic() const {
+    std::unordered_map<std::string, int> inDegree; // Degré entrant des arguments
+    std::queue<std::string> q;
+
+    // Initialisation des degrés entrants à 0
+    for (const auto& arg : arguments) {
+        inDegree[arg] = 0;
+    }
+
+    // Calcul des degrés entrants à partir de la matrice des attaques
+    for (size_t i = 0; i < arguments.size(); ++i) {
+        for (size_t j = 0; j < arguments.size(); ++j) {
+            if (attackMatrix[i][j]) {
+                inDegree[arguments[j]]++;
+            }
+        }
+    }
+
+    // Ajouter les arguments avec un degré entrant nul
+    for (const auto& [arg, degree] : inDegree) {
+        if (degree == 0) q.push(arg);
+    }
+
+    int visitedCount = 0; // Nombre d'arguments visités
+    while (!q.empty()) {
+        auto current = q.front();
+        q.pop();
+        visitedCount++;
+
+        // Mettre à jour les degrés entrants des voisins
+        for (size_t i = 0; i < arguments.size(); ++i) {
+            if (arguments[i] == current) {
+                for (size_t j = 0; j < arguments.size(); ++j) {
+                    if (attackMatrix[i][j]) {
+                        inDegree[arguments[j]]--;
+                        if (inDegree[arguments[j]] == 0) {
+                            q.push(arguments[j]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Si tous les arguments sont visités, le graphe est acyclique
+    return static_cast<size_t>(visitedCount) == arguments.size();
+
+}
 
 
+std::unordered_map<std::string, std::string> ArgumentationFramework::computeCompleteLabelling() const {
+    std::unordered_map<std::string, std::string> labels;
+
+    // Initialiser tous les arguments comme "undec"
+    for (const auto& arg : arguments) {
+        labels[arg] = "undec";
+    }
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+
+        // Parcourir chaque argument
+        for (size_t i = 0; i < arguments.size(); ++i) {
+            const std::string& arg = arguments[i];
+
+            if (labels[arg] == "undec") {
+                bool allAttackersOut = true;
+
+                // Parcourir les attaquants potentiels (colonne i dans attackMatrix)
+                for (size_t j = 0; j < arguments.size(); ++j) {
+                    if (attackMatrix[j][i]) { // j attaque i
+                        if (labels[arguments[j]] == "in") {
+                            labels[arg] = "out"; // Argument attaqué par un "in"
+                            changed = true;
+                            break;
+                        }
+                        if (labels[arguments[j]] != "out") {
+                            allAttackersOut = false;
+                        }
+                    }
+                }
+
+                // Si tous les attaquants sont "out", marquer l'argument comme "in"
+                if (allAttackersOut && labels[arg] == "undec") {
+                    labels[arg] = "in";
+                    changed = true;
+                }
+            }
+        }
+    }
+
+    return labels;
+}
+
+
+std::unordered_map<std::string, std::string> ArgumentationFramework::computeStableLabelling() const {
+    auto labels = computeCompleteLabelling();
+
+    // Vérifier qu'il n'y a pas d'arguments étiquetés "undec"
+    for (const auto& [arg, label] : labels) {
+        if (label == "undec") {
+            return {}; // Retourne vide si le labelling complet n'est pas stable
+        }
+    }
+
+    return labels;
+}

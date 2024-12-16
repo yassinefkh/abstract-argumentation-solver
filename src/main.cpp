@@ -6,6 +6,17 @@
 #include <string>
 #include <vector>
 
+// decommentez pour activer le mode debug (affichage des informations de debug) 
+// #define DEBUG
+
+void displayLabelling(const std::unordered_map<std::string, std::string>& labelling) {
+    std::cout << "Labelling:\n";
+    for (const auto& [arg, label] : labelling) {
+        std::cout << arg << ": " << label << "\n";
+    }
+}
+
+
 int main(int argc, char *argv[])
 {
     if (argc < 4 || (std::string(argv[2]) == "-p" && argc < 5))
@@ -33,7 +44,7 @@ int main(int argc, char *argv[])
 
             int bruteForceCounter = 0, characteristicCounter = 0;
 
-            bool resultBrute = af.isCredulousCompleteEarlyStop(argument, bruteForceCounter);
+            bool resultBrute = af.isCredulousComplete(argument, bruteForceCounter);
             std::cout << "Brute-Force Result: " << (resultBrute ? "YES" : "NO") << "\n";
             std::cout << "States explored (Brute-Force): " << bruteForceCounter << "\n";
 
@@ -70,6 +81,11 @@ int main(int argc, char *argv[])
             auto characteristicExtension = af.findCompleteExtensionPlus(characteristicCounter);
             std::cout << "Characteristic Function Extension: " << formatExtension(characteristicExtension) << "\n";
             std::cout << "States explored (Characteristic): " << characteristicCounter << "\n";
+
+            #ifdef DEBUG
+            auto completeLabelling = af.computeCompleteLabelling();
+            displayLabelling(completeLabelling);
+            #endif
         }
         else if (command == "DC-ST")
         {
@@ -81,7 +97,7 @@ int main(int argc, char *argv[])
 
             int bruteForceCounter = 0, characteristicCounter = 0;
 
-            bool resultBrute = af.isCredulousStableEarlyStop(argument, bruteForceCounter);
+            bool resultBrute = af.isCredulousStable(argument, bruteForceCounter);
             std::cout << "Brute-Force Result: " << (resultBrute ? "YES" : "NO") << "\n";
             std::cout << "States explored (Brute-Force): " << bruteForceCounter << "\n";
 
@@ -120,6 +136,15 @@ int main(int argc, char *argv[])
             auto characteristicExtension = af.findStableExtensionPlus(characteristicCounter);
             std::cout << "Characteristic Function Extension: " << formatExtension(characteristicExtension) << "\n";
             std::cout << "States explored (Characteristic): " << characteristicCounter << "\n";
+
+             #ifdef DEBUG
+            auto stableLabelling = af.computeStableLabelling();
+            if (!stableLabelling.empty()) {
+                displayLabelling(stableLabelling);
+            } else {
+                std::cout << "No stable labelling found.\n";
+            }
+            #endif
         }
         else
         {
