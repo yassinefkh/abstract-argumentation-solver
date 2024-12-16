@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 
             int bruteForceCounter = 0, characteristicCounter = 0;
 
-            bool resultBrute = af.isCredulousComplete(argument, bruteForceCounter);
+            bool resultBrute = af.isCredulousCompleteEarlyStop(argument, bruteForceCounter);
             std::cout << "Brute-Force Result: " << (resultBrute ? "YES" : "NO") << "\n";
             std::cout << "States explored (Brute-Force): " << bruteForceCounter << "\n";
 
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 
             int bruteForceCounter = 0, characteristicCounter = 0;
 
-            bool resultBrute = af.isCredulousStable(argument, bruteForceCounter);
+            bool resultBrute = af.isCredulousStableEarlyStop(argument, bruteForceCounter);
             std::cout << "Brute-Force Result: " << (resultBrute ? "YES" : "NO") << "\n";
             std::cout << "States explored (Brute-Force): " << bruteForceCounter << "\n";
 

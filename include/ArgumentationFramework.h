@@ -39,6 +39,10 @@ public:
     // ------------------------------
     std::vector<std::set<std::string>> enumerateCompleteExtensions(int& counter) const;
     std::vector<std::set<std::string>> enumerateStableExtensions(int& counter) const;
+    std::vector<std::set<std::string>> enumerateCompleteExtensionsWithEarlyStop(
+    const std::string& targetArg, int& counter, bool& found) const;
+    std::vector<std::set<std::string>> enumerateStableExtensionsWithEarlyStop(
+    const std::string& targetArg, int& counter, bool& found) const;
 
     // ------------------------------
     // RECHERCHE D'UNE EXTENSION (NAIVE ET OPTIMISEE)
@@ -47,6 +51,8 @@ public:
     std::set<std::string> findOneStableExtension(int& counter) const;
     std::set<std::string> findCompleteExtensionPlus(int& counter) const;
     std::set<std::string> findStableExtensionPlus(int& counter) const;
+    std::set<std::string> findOneStableExtensionWithEarlyStop(int& counter) const;
+    std::set<std::string> findOneCompleteExtensionWithEarlyStop(int& counter) const;
 
     // ------------------------------
     // TESTS DE CROYANCE
@@ -56,6 +62,8 @@ public:
     bool isSkepticalComplete(const std::string& argument, int& counter) const;
     bool isCredulousStable(const std::string& argument, int& counter) const;
     bool isSkepticalStable(const std::string& argument, int& counter) const;
+    bool isCredulousCompleteEarlyStop(const std::string& argument, int& counter) const;
+    bool isCredulousStableEarlyStop(const std::string& argument, int& counter) const;
 
     // Approches fonction caractéristique
     bool isCredulousCompletePlus(const std::string& argument, int& counter) const;

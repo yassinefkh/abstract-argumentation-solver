@@ -112,6 +112,9 @@ bool ArgumentationFramework::isStable(const std::set<std::string>& extension) co
     return true;
 }
 
+
+
+
 // ------------------------------------
 // ENUMERATION NAIVE DES EXTENSIONS
 // ------------------------------------
@@ -134,6 +137,31 @@ std::vector<std::set<std::string>> ArgumentationFramework::enumerateCompleteExte
     return extensions;
 }
 
+std::vector<std::set<std::string>> ArgumentationFramework::enumerateCompleteExtensionsWithEarlyStop(
+    const std::string& targetArg, int& counter, bool& found) const {
+    counter = 0;
+    std::vector<std::set<std::string>> extensions;
+    size_t n = arguments.size();
+
+    for (size_t i = 0; i < (1 << n); ++i) {
+        counter++;
+        std::set<std::string> subset;
+        for (size_t j = 0; j < n; ++j) {
+            if (i & (1 << j)) subset.insert(arguments[j]);
+        }
+        if (isComplete(subset)) {
+            extensions.push_back(subset);
+            if (subset.find(targetArg) != subset.end()) {
+                found = true;
+                return extensions; // Arrêt immédiat si une extension contenant `targetArg` est trouvée
+            }
+        }
+    }
+    found = false;
+    return extensions;
+}
+
+
 std::vector<std::set<std::string>> ArgumentationFramework::enumerateStableExtensions(int& counter) const {
     counter = 0;
     std::vector<std::set<std::string>> extensions;
@@ -152,23 +180,93 @@ std::vector<std::set<std::string>> ArgumentationFramework::enumerateStableExtens
     return extensions;
 }
 
-std::set<std::string> ArgumentationFramework::findOneCompleteExtension(int& counter) const {
+std::vector<std::set<std::string>> ArgumentationFramework::enumerateStableExtensionsWithEarlyStop(
+    const std::string& targetArg, int& counter, bool& found) const {
+    counter = 0;
+    std::vector<std::set<std::string>> extensions;
+    size_t n = arguments.size();
+
+    for (size_t i = 0; i < (1 << n); ++i) {
+        counter++;
+        std::set<std::string> subset;
+        for (size_t j = 0; j < n; ++j) {
+            if (i & (1 << j)) subset.insert(arguments[j]);
+        }
+        if (isStable(subset)) {
+            extensions.push_back(subset);
+            if (subset.find(targetArg) != subset.end()) {
+                found = true;
+                return extensions; // Arrêt immédiat si une extension contenant `targetArg` est trouvée
+            }
+        }
+    }
+    found = false;
+    return extensions;
+}
+
+
+/* std::set<std::string> ArgumentationFramework::findOneCompleteExtension(int& counter) const {
     auto extensions = enumerateCompleteExtensions(counter);
     if (!extensions.empty()) {
         std::srand(static_cast<unsigned>(std::time(nullptr)));
         return extensions[std::rand() % extensions.size()];
     }
     return {};
-}
+} */
 
-std::set<std::string> ArgumentationFramework::findOneStableExtension(int& counter) const {
+
+/* std::set<std::string> ArgumentationFramework::findOneStableExtension(int& counter) const {
     auto extensions = enumerateStableExtensions(counter);
     if (!extensions.empty()) {
         std::srand(static_cast<unsigned>(std::time(nullptr)));
         return extensions[std::rand() % extensions.size()];
     }
     return {};
+} */
+
+std::set<std::string> ArgumentationFramework::findOneStableExtension(int& counter) const {
+    return findOneStableExtensionWithEarlyStop(counter);
 }
+
+std::set<std::string> ArgumentationFramework::findOneStableExtensionWithEarlyStop(int& counter) const {
+    counter = 0;
+    size_t n = arguments.size();
+
+    for (size_t i = 0; i < (1 << n); ++i) {
+        counter++;
+        std::set<std::string> subset;
+        for (size_t j = 0; j < n; ++j) {
+            if (i & (1 << j)) subset.insert(arguments[j]);
+        }
+        if (isStable(subset)) {
+            return subset; // Retourne immédiatement la première extension stable trouvée
+        }
+    }
+    return {}; // Retourne un ensemble vide si aucune extension stable n'est trouvée
+}
+
+std::set<std::string> ArgumentationFramework::findOneCompleteExtensionWithEarlyStop(int& counter) const {
+    counter = 0;
+    size_t n = arguments.size();
+
+    for (size_t i = 0; i < (1 << n); ++i) {
+        counter++;
+        std::set<std::string> subset;
+        for (size_t j = 0; j < n; ++j) {
+            if (i & (1 << j)) subset.insert(arguments[j]);
+        }
+        if (isComplete(subset)) {
+            return subset; // Retourne immédiatement la première extension complète trouvée
+        }
+    }
+    return {}; // Retourne un ensemble vide si aucune extension complète n'est trouvée
+}
+
+std::set<std::string> ArgumentationFramework::findOneCompleteExtension(int& counter) const {
+    return findOneCompleteExtensionWithEarlyStop(counter);
+}
+
+
 
 // ------------------------------------
 // APPROCHE NAIVE : CREDULOUS & SKEPTICAL
@@ -182,6 +280,13 @@ bool ArgumentationFramework::isCredulousComplete(const std::string& argument, in
     }
     return false;
 }
+
+bool ArgumentationFramework::isCredulousCompleteEarlyStop(const std::string& argument, int& counter) const {
+    bool found = false;
+    enumerateCompleteExtensionsWithEarlyStop(argument, counter, found);
+    return found;
+}
+
 
 bool ArgumentationFramework::isSkepticalComplete(const std::string& argument, int& counter) const {
     counter = 0;
@@ -200,6 +305,13 @@ bool ArgumentationFramework::isCredulousStable(const std::string& argument, int&
     }
     return false;
 }
+
+bool ArgumentationFramework::isCredulousStableEarlyStop(const std::string& argument, int& counter) const {
+    bool found = false;
+    enumerateStableExtensionsWithEarlyStop(argument, counter, found);
+    return found;
+}
+
 
 bool ArgumentationFramework::isSkepticalStable(const std::string& argument, int& counter) const {
     counter = 0;
@@ -478,6 +590,7 @@ std::set<std::string> ArgumentationFramework::findStableExtensionPlus(int& count
 
     return {}; // Retourne un ensemble vide si aucune extension stable n'est trouvée
 }
+
 
 
 
