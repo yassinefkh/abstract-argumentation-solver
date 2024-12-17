@@ -1,68 +1,66 @@
-#include "ArgumentationFramework.h"
-#include "utility.h"
-#include <cstdlib> 
-#include <ctime> 
+#include "../include/ArgumentationFramework.h"
+#include "../include/utility.h"
+#include <cstdlib>
+#include <ctime>
+#include <algorithm>
+#include <iostream>
 
+// Helper for debug messages
+bool debugMode = true;
+void debug(const std::string& message) {
+    if (debugMode) {
+        std::cout << message << std::endl;
+    }
+}
+
+// Add an argument
 void ArgumentationFramework::addArgument(const std::string& arg) {
     arguments.insert(arg);
 }
 
+// Add an attack
 void ArgumentationFramework::addAttack(const std::string& attacker, const std::string& target) {
     attacks.emplace_back(attacker, target);
 }
 
-
+// Get arguments
 const std::set<std::string>& ArgumentationFramework::getArguments() const {
     return arguments;
 }
 
+// Get attacks
 const std::vector<std::pair<std::string, std::string>>& ArgumentationFramework::getAttacks() const {
     return attacks;
 }
 
-
+// Display arguments and attacks
 void ArgumentationFramework::display() const {
-#if DEBUG
-    std::cout << ">>> Arguments :\n[";
+    std::cout << ">>> Arguments : [";
     for (auto it = arguments.begin(); it != arguments.end(); ++it) {
         std::cout << *it;
         if (std::next(it) != arguments.end()) {
-            std::cout << ",";
+            std::cout << ", ";
         }
     }
     std::cout << "]\n";
 
-    std::cout << "\n>>> Attacks :\n[";
+    std::cout << ">>> Attacks : [";
     for (size_t i = 0; i < attacks.size(); ++i) {
-        std::cout << "(" << attacks[i].first << "," << attacks[i].second << ")";
+        std::cout << "(" << attacks[i].first << ", " << attacks[i].second << ")";
         if (i != attacks.size() - 1) {
-            std::cout << ",";
+            std::cout << ", ";
         }
     }
     std::cout << "]\n";
-#endif
 }
 
-
-
+//1
+// Check if an extension is conflict-free
 bool ArgumentationFramework::isConflictFree(const std::set<std::string>& extension) const {
-    for (const auto& arg : extension) {
-        if (arguments.find(arg) == arguments.end()) {
-#if DEBUG
-            std::cerr << "Error: Argument '" << arg << "' is not in the AF.\n";
-#endif
-            return false;
-        }
-    }
     for (const auto& arg1 : extension) {
         for (const auto& arg2 : extension) {
-#if DEBUG
-            std::cout << "Checking attack: " << arg1 << " -> " << arg2 << "\n";
-#endif
             if (std::find(attacks.begin(), attacks.end(), std::make_pair(arg1, arg2)) != attacks.end()) {
-#if DEBUG
-                std::cout << "Conflict found: " << arg1 << " -> " << arg2 << "\n";
-#endif
+                debug("Conflict found: " + arg1 + " -> " + arg2);
                 return false;
             }
         }
@@ -70,10 +68,10 @@ bool ArgumentationFramework::isConflictFree(const std::set<std::string>& extensi
     return true;
 }
 
-
+// Check if an argument is defended by an extension
 bool ArgumentationFramework::defends(const std::string& arg, const std::set<std::string>& extension) const {
     for (const auto& attack : attacks) {
-        if (attack.second == arg) {
+        if (attack.second == arg) { // Check if `arg` is attacked
             bool defended = false;
             for (const auto& defender : extension) {
                 if (std::find(attacks.begin(), attacks.end(), std::make_pair(defender, attack.first)) != attacks.end()) {
@@ -82,104 +80,110 @@ bool ArgumentationFramework::defends(const std::string& arg, const std::set<std:
                 }
             }
             if (!defended) {
-#if DEBUG
-                std::cout << "Argument '" << arg << "' is NOT defended by the extension.\n";
-#endif
+                debug("Argument '" + arg + "' is NOT defended by the extension.");
                 return false;
             }
         }
     }
-#if DEBUG
-    std::cout << "Argument '" << arg << "' is defended by the extension.\n";
-#endif
+    debug("Argument '" + arg + "' is defended by the extension.");
     return true;
 }
 
-
+//2
+// Check if an extension is admissible
 bool ArgumentationFramework::isAdmissible(const std::set<std::string>& extension) const {
-    return isConflictFree(extension) && std::all_of(extension.begin(), extension.end(),
-        [this, &extension](const std::string& arg) { return defends(arg, extension); });
+    return isConflictFree(extension) &&
+           std::all_of(extension.begin(), extension.end(), [this, &extension](const std::string& arg) {
+               return defends(arg, extension);
+           });
 }
 
+//3
+// Check if an extension is complete
 bool ArgumentationFramework::isComplete(const std::set<std::string>& extension) const {
     if (!isAdmissible(extension)) {
-#if DEBUG
-        std::cout << "not admissible\n";
-#endif
+        debug("Extension is not admissible.");
         return false;
     }
-
     for (const auto& arg : arguments) {
-        if (defends(arg, extension)) {
-            if (extension.find(arg) == extension.end()) {
-#if DEBUG
-                std::cout << "Argument '" << arg << "' is defended but not in the extension.\n";
-#endif
-                return false;
-            }
+        if (defends(arg, extension) && extension.find(arg) == extension.end()) {
+            debug("Argument '" + arg + "' is defended but not in the extension.");
+            return false;
         }
     }
     return true;
 }
 
-// TODO :  a OTPIMISER ! ici on fait une recherche exhaustive, mais si on a un argument non attaqué on sait qu'il apartient à toute extension complète 
-bool ArgumentationFramework::isCredulousComplete(const std::string& argument) const {
+//4
+// Find one complete extension
+std::set<std::string> ArgumentationFramework::findOneCompleteExtension() const {
     std::vector<std::string> args(arguments.begin(), arguments.end());
     size_t n = args.size();
-    for (size_t i = 0; i < (1 << n); ++i) { 
+    for (size_t i = 0; i < (1U << n); ++i) { // Generate all subsets
         std::set<std::string> subset;
         for (size_t j = 0; j < n; ++j) {
-            if (i & (1 << j)) {
+            if (i & (1U << j)) {
                 subset.insert(args[j]);
             }
         }
-        if (isComplete(subset) && subset.find(argument) != subset.end()) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
-bool ArgumentationFramework::isSkepticalCompleteBis(const std::string& argument) const {
-    // si l'argument n'est pas attaqué, il est dans toutes les extensions complètes
-    bool isAttacked = false;
-    for (const auto& attack : attacks) {
-        if (attack.second == argument) {
-            isAttacked = true;
-            break;
-        }
-    }
-    if (!isAttacked) {
-        return true;
-    }
-
-    // vérifier les défenses pour l'argument
-    std::vector<std::string> args(arguments.begin(), arguments.end());
-    size_t n = args.size();
-
-    for (size_t i = 0; i < (1 << n); ++i) {
-        std::set<std::string> subset;
-        for (size_t j = 0; j < n; ++j) {
-            if (i & (1 << j)) {
-                subset.insert(args[j]);
-            }
-        }
-
         if (isComplete(subset)) {
-            // si l'argument est absent dans une extension complète, il n'est pas sceptiquement accepté.
-            if (subset.find(argument) == subset.end()) {
-                return false;
+            debug("Found complete extension: " + formatExtension(subset));
+            return subset;
+        }
+    }
+    return {};
+}
+
+//5
+// Find one stable extension
+std::set<std::string> ArgumentationFramework::findStableExtension() const {
+    auto extensions = enumerateStableExtensions();
+    if (!extensions.empty()) {
+        return extensions[0]; // Return the first stable extension found
+    }
+    return {}; // Return an empty set if no stable extension exists
+}
+
+//6
+// Enumerate all complete extensions
+std::set<std::string> ArgumentationFramework::findCompleteExtension() const {
+    auto extensions = enumerateCompleteExtensions();
+    if (!extensions.empty()) {
+        return extensions[0]; // Return the first complete extension found
+    }
+    return {}; // Return an empty set if no complete extension exists
+}
+
+//7
+// Enumerate all stable extensions
+std::vector<std::set<std::string>> ArgumentationFramework::enumerateCompleteExtensions() const {
+    std::vector<std::set<std::string>> completeExtensions;
+    std::vector<std::string> args(arguments.begin(), arguments.end());
+    size_t n = args.size();
+
+    // Generate all subsets of arguments
+    for (size_t i = 0; i < (1U << n); ++i) {
+        std::set<std::string> subset;
+        for (size_t j = 0; j < n; ++j) {
+            if (i & (1U << j)) {
+                subset.insert(args[j]);
             }
+        }
+
+        // Check if the subset is a complete extension
+        if (isComplete(subset)) {
+            completeExtensions.push_back(subset);
         }
     }
 
-    return true;
+    return completeExtensions;
 }
-
-
+//8
+// Check if an extension is stable
 bool ArgumentationFramework::isStable(const std::set<std::string>& extension) const {
-    if (!isConflictFree(extension)) return false;
+    if (!isConflictFree(extension)) {
+        return false;
+    }
     std::set<std::string> attacked;
     for (const auto& arg : extension) {
         for (const auto& attack : attacks) {
@@ -196,101 +200,23 @@ bool ArgumentationFramework::isStable(const std::set<std::string>& extension) co
     return true;
 }
 
-// TODO : DOUBLONS ICI avec l'ensemble vide 
-std::vector<std::set<std::string>> ArgumentationFramework::enumerateCompleteExtensions() const {
-
-    std::vector<std::set<std::string>> completeExtensions;
-    std::vector<std::string> args(arguments.begin(), arguments.end());
-    size_t n = args.size();
-
-    // generate all subsets of arguments
-    for (size_t i = 0; i < (1 << n); ++i) { 
-        std::set<std::string> subset;
-        for (size_t j = 0; j < n; ++j) {
-            if (i & (1 << j)) {
-                subset.insert(args[j]);
-            }
-        }
-
-        // chick if the subset is a complete extension
-        if (isComplete(subset)) {
-            completeExtensions.push_back(subset);
-        }
-    }
-
-    return completeExtensions;
-}
-
-
-
-bool ArgumentationFramework::isSkepticalComplete(const std::string& argument) const {
-    std::vector<std::set<std::string>> completeExtensions = enumerateCompleteExtensions();
-
-    for (const auto& extension : completeExtensions) {
-        if (extension.find(argument) == extension.end()) {
-            return false; 
-        }
-    }
-
-    return true; 
-}
-
-
-bool ArgumentationFramework::isCredulousStable(const std::string& argument) const {
-    std::vector<std::string> args(arguments.begin(), arguments.end());
-    size_t n = args.size();
-
-    for (size_t i = 0; i < (1 << n); ++i) {
-        std::set<std::string> subset;
-        for (size_t j = 0; j < n; ++j) {
-            if (i & (1 << j)) {
-                subset.insert(args[j]);
-            }
-        }
-
-        if (isStable(subset) && subset.find(argument) != subset.end()) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-
-
-bool ArgumentationFramework::isSkepticalStable(const std::string& argument) const {
-    std::vector<std::string> args(arguments.begin(), arguments.end());
-    size_t n = args.size();
-
-    for (size_t i = 0; i < (1 << n); ++i) {
-        std::set<std::string> subset;
-        for (size_t j = 0; j < n; ++j) {
-            if (i & (1 << j)) {
-                subset.insert(args[j]);
-            }
-        }
-
-        if (isStable(subset) && subset.find(argument) == subset.end()) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
+//9
+// Enumerate all stable extensions
 std::vector<std::set<std::string>> ArgumentationFramework::enumerateStableExtensions() const {
     std::vector<std::set<std::string>> stableExtensions;
     std::vector<std::string> args(arguments.begin(), arguments.end());
     size_t n = args.size();
 
-    for (size_t i = 0; i < (1 << n); ++i) {
+    // Generate all subsets of arguments
+    for (size_t i = 0; i < (1U << n); ++i) {
         std::set<std::string> subset;
         for (size_t j = 0; j < n; ++j) {
-            if (i & (1 << j)) {
+            if (i & (1U << j)) {
                 subset.insert(args[j]);
             }
         }
 
+        // Check if the subset is a stable extension
         if (isStable(subset)) {
             stableExtensions.push_back(subset);
         }
@@ -298,70 +224,3 @@ std::vector<std::set<std::string>> ArgumentationFramework::enumerateStableExtens
 
     return stableExtensions;
 }
-
-
-std::set<std::string> ArgumentationFramework::findOneStableExtension() const {
-    std::vector<std::string> args(arguments.begin(), arguments.end());
-    size_t n = args.size();
-    std::vector<std::set<std::string>> stableExtensions;
-
-    std::srand(static_cast<unsigned>(std::time(nullptr)));
-
-    for (size_t i = 0; i < (1 << n); ++i) {
-        std::set<std::string> subset;
-        for (size_t j = 0; j < n; ++j) {
-            if (i & (1 << j)) {
-                subset.insert(args[j]);
-            }
-        }
-
-        if (isStable(subset)) {
-#if DEBUG
-            std::cout << "Found stable extension: " << formatExtension(subset) << "\n";
-#endif
-            stableExtensions.push_back(subset); 
-        }
-    }
-
-    if (!stableExtensions.empty()) {
-        size_t randomIndex = std::rand() % stableExtensions.size();
-        return stableExtensions[randomIndex];
-    }
-
-    return {};
-}
-
-
-
-std::set<std::string> ArgumentationFramework::findOneCompleteExtension() const {
-    std::vector<std::string> args(arguments.begin(), arguments.end());
-    size_t n = args.size();
-    std::vector<std::set<std::string>> completeExtensions;
-
-    std::srand(static_cast<unsigned>(std::time(nullptr)));
-
-    for (size_t i = 0; i < (1 << n); ++i) {
-        std::set<std::string> subset;
-        for (size_t j = 0; j < n; ++j) {
-            if (i & (1 << j)) {
-                subset.insert(args[j]);
-            }
-        }
-
-        if (isComplete(subset)) {
-#if DEBUG
-            std::cout << "Found complete extension: " << formatExtension(subset) << "\n";
-#endif
-            completeExtensions.push_back(subset); 
-        }
-    }
-
-    if (!completeExtensions.empty()) {
-        size_t randomIndex = std::rand() % completeExtensions.size();
-        return completeExtensions[randomIndex];
-    }
-
-    return {};
-}
-
-
