@@ -1,6 +1,7 @@
+```markdown
 # Abstract Argumentation Solver
 
-Ce projet est une implémentation d'un solveur pour les graphes d'argumentation (Abstract Argumentation Frameworks - AF). Il prend en entrée des fichiers décrivant un graphe d'argumentation et permet de calculer les extensions complètes et stables, ainsi que de vérifier l'acceptation crédule et sceptique des arguments.
+Ce projet implémente trois approches pour résoudre des systèmes d'argumentation (Argumentation Frameworks - AF) : une approche naïve, une approche basée sur la fonction caractéristique, et une approche utilisant un labelling. Le programme inclut des tests unitaires pour valider ces approches ainsi qu'un fichier de tests automatiques qui génère des graphes aléatoires avec différentes tailles, densités et nombres d'attaques, et sauvegarde les résultats dans un fichier CSV pour analyse.
 
 ---
 
@@ -23,105 +24,79 @@ La structure du projet est la suivante :
 │   ├── test_af1.txt
 │   ├── test_af2.txt
 │   ├── ...
-└── README.md        # Ce fichier
+├── tests/           # Tests unitaires et automatiques
+│   ├── ArgumentationFrameworkTest.cpp
+│   ├── auto_tests.cpp
+├── results/         # Contient les résultats des tests automatiques
+│   ├── results.csv
+└── README.md        
 ```
 
 ---
 
 ## Fonctionnalités
 
-1. **Extensions complètes** :
-   - Calcul de toutes les extensions complètes.
-   - Affichage d'une seule extension aléatoire.
-2. **Extensions stables** :
-   - Calcul de toutes les extensions stables.
-   - Affichage d'une seule extension aléatoire.
-3. **Acceptation crédule (DC-XX)** :
-   - Vérification si un argument appartient à au moins une extension (complète ou stable).
-4. **Acceptation sceptique (DS-XX)** :
-   - Vérification si un argument appartient à toutes les extensions (complète ou stable).
+1. **Approches implémentées :**
+   - **Naïve :** Explore exhaustivement tous les sous-ensembles possibles d'arguments pour vérifier les propriétés ou calculer les extensions.
+   - **Fonction caractéristique :** Exploite une fonction pour calculer les points fixes correspondant aux extensions complètes et stables.
+   - **Labelling :** Calcule des extensions en étiquetant les arguments comme "in", "out", ou "undec".
+
+2. **Tests unitaires :**
+   - Situés dans `tests/ArgumentationFrameworkTest.cpp`.
+   - Vérifient les propriétés fondamentales des approches sur des graphes d'argumentation bien définis.
+
+3. **Tests automatiques :**
+   - Fichier `tests/auto_tests.cpp` : Génère des graphes aléatoires avec différentes tailles et densités d'attaques, exécute toutes les commandes et sauvegarde les résultats dans `results/results.csv`.
 
 ---
 
-## Compilation
+## Compilation et Exécution
 
-Pour compiler le projet, utilisez g++. Les fichiers source se trouvent dans le dossier `src/`, et les headers dans `include/`.
+### Compilation
+
+Pour compiler le projet, utilisez la commande suivante :
 
 ```bash
-g++ -std=c++17 -Iinclude -o solver src/*.cpp
+make
+./solver
 ```
 
----
+### Exécution
 
-## Exécution
-
-L'exécutable `solver` prend plusieurs commandes pour exécuter des actions spécifiques.
-
-### Usage général
+L'exécutable `solver` permet d'exécuter différentes commandes pour calculer ou vérifier des propriétés sur les cadres argumentatifs.
 
 ```bash
 ./solver -p COMMAND -f FILE [-a ARG]
 ```
 
-- `COMMAND` : Spécifie l'opération à exécuter :
-  - `SE-CO` : Calcul d'une extension complète aléatoire.
-  - `DC-CO` : Vérification de l'acceptation crédule d'un argument dans les extensions complètes.
-  - `DS-CO` : Vérification de l'acceptation sceptique d'un argument dans les extensions complètes.
-  - `SE-ST` : Calcul d'une extension stable aléatoire.
-  - `DC-ST` : Vérification de l'acceptation crédule d'un argument dans les extensions stables.
-  - `DS-ST` : Vérification de l'acceptation sceptique d'un argument dans les extensions stables.
-- `FILE` : Chemin vers le fichier décrivant le cadre argumentatif.
-- `ARG` : (Optionnel) Nom de l'argument à tester pour les commandes `DC-XX` et `DS-XX`.
+- **`COMMAND` :**
+  - `SE-CO` : Extension complète aléatoire.
+  - `DC-CO` : Acceptation crédule dans les extensions complètes.
+  - `DS-CO` : Acceptation sceptique dans les extensions complètes.
+  - `SE-ST` : Extension stable aléatoire.
+  - `DC-ST` : Acceptation crédule dans les extensions stables.
+  - `DS-ST` : Acceptation sceptique dans les extensions stables.
 
-### Exemples d'exécution
+- **`FILE` :** Chemin du fichier décrivant le cadre argumentatif.
 
-- Calculer une extension complète aléatoire :
+- **`ARG` :** (Optionnel) Argument à tester pour les commandes `DC-XX` et `DS-XX`.
 
-```bash
-./solver -p SE-CO -f af/test_af1.txt
-```
-
-- Vérifier l'acceptation crédule d'un argument dans les extensions complètes :
+### Exemple d'exécution
 
 ```bash
 ./solver -p DC-CO -f af/test_af1.txt -a A
-```
-
-- Vérifier l'acceptation sceptique d'un argument dans les extensions stables :
-
-```bash
-./solver -p DS-ST -f af/test_af2.txt -a B
-```
-
-- Calculer une extension stable aléatoire :
-
-```bash
-./solver -p SE-ST -f af/test_af2.txt
 ```
 
 ---
 
 ## Format des fichiers d'entrée
 
-Les fichiers décrivant les cadres argumentatifs doivent suivre le format suivant :
+Les fichiers doivent suivre le format suivant :
 
-- Définition des arguments : Chaque argument est défini par une ligne de la forme :
+- **Arguments** : `arg(X).` où `X` est le nom de l'argument.
+- **Attaques** : `att(X, Y).` où `X` attaque `Y`.
 
-  ```
-  arg(X).
-  ```
-
-  où `X` est le nom de l'argument (lettres, chiffres ou _).
-
-- Définition des attaques : Chaque attaque est définie par une ligne de la forme :
-
-  ```
-  att(X, Y).
-  ```
-
-  où `X` attaque `Y`.
-
-### Exemple de fichier `af/test_af1.txt`
+Exemple de fichier `af/test_af1.txt` :
 
 ```
 arg(A).
@@ -134,15 +109,9 @@ att(C, A).
 
 ---
 
-## Tests
+## Résultats
 
-Des fichiers de test sont disponibles dans le dossier `af/`. Ils incluent des fichiers `.txt` décrivant les graphes d'argumentation.
-
-Pour tester un fichier donné :
-
-```bash
-./solver -p SE-CO -f af/test_af1.txt
-```
+Les tests automatiques génèrent des résultats stockés dans un fichier CSV (`results/results.csv`). Les graphes sont générés aléatoirement avec des tailles, densités et nombres d'attaques croissants. Les résultats incluent le temps d'exécution pour chaque commande, ainsi que le nombre d'états explorés pour comparer les performances des trois approches.
 
 ---
 
@@ -150,4 +119,5 @@ Pour tester un fichier donné :
 
 - FEKIH HASSEN Yassine, KADIC Anais
 - Date : 2024
-- Auteur.e du projet : BONZON Elise
+- Auteure du projet : Mme. BONZON Elise, Université Paris Cité - LIPADE
+```
