@@ -1,4 +1,3 @@
-```markdown
 # Abstract Argumentation Solver
 
 Ce projet implémente trois approches pour résoudre des systèmes d'argumentation (Argumentation Frameworks - AF) : une approche naïve, une approche basée sur la fonction caractéristique, et une approche utilisant un labelling. Le programme inclut des tests unitaires pour valider ces approches ainsi qu'un fichier de tests automatiques qui génère des graphes aléatoires avec différentes tailles, densités et nombres d'attaques, et sauvegarde les résultats dans un fichier CSV pour analyse.
