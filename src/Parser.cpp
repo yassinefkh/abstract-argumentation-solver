@@ -5,6 +5,7 @@
 
 Parser::Parser(const std::string& filename) : filename(filename) {}
 
+// parse le fichier et construit l'AF
 ArgumentationFramework Parser::parse() {
     ArgumentationFramework af;
     std::ifstream file(filename);
@@ -15,9 +16,11 @@ ArgumentationFramework Parser::parse() {
 
     std::string line;
     while (std::getline(file, line)) {
+        // supprime tous les espaces blancs dans la ligne
         line.erase(remove_if(line.begin(), line.end(), isspace), line.end());
 
         if (line.rfind("arg(", 0) == 0) { 
+            // extrait le nom de l'argument (entre les parenthèses)
             std::string arg = line.substr(4, line.size() - 6);
 
             if (arg == "arg" || arg == "att" || 
@@ -31,13 +34,14 @@ ArgumentationFramework Parser::parse() {
             af.addArgument(arg);
 
         } else if (line.rfind("att(", 0) == 0) { 
+            // extrait les arguments de l'attaque 
             size_t commaPos = line.find(',', 4);
             std::string arg1 = line.substr(4, commaPos - 4);
             std::string arg2 = line.substr(commaPos + 1, line.size() - commaPos - 3);
 
-            if (af.getArguments().find(arg1) == af.getArguments().end() || 
-                af.getArguments().find(arg2) == af.getArguments().end()) {
-                throw std::runtime_error("Error: Undefined argument.s in attack: " + arg1 + ", " + arg2);
+            if (std::find(af.getArguments().begin(), af.getArguments().end(), arg1) == af.getArguments().end() || 
+                std::find(af.getArguments().begin(), af.getArguments().end(), arg2) == af.getArguments().end()) {
+                throw std::runtime_error("Error: Undefined arguments in attack: " + arg1 + ", " + arg2);
             }
 
 #if DEBUG
