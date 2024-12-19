@@ -14,20 +14,21 @@ La structure du projet est la suivante :
 │   ├── ArgumentationFramework.h
 │   ├── Parser.h
 │   ├── utility.h
+├── results/    # Contient les résultats des tests automatiques 
+│   ├── results.csv
+│   ├── comparison.png
 ├── src/             # Contient les fichiers source (.cpp)
 │   ├── ArgumentationFramework.cpp
 │   ├── Parser.cpp
 │   ├── utility.cpp
 │   ├── main.cpp
+│   ├── testsGraph.cpp
 ├── af/              # Contient les fichiers de test (.txt) décrivant les cadres argumentatifs
 │   ├── test_af1.txt
 │   ├── test_af2.txt
 │   ├── ...
 ├── tests/           # Tests unitaires et automatiques
 │   ├── ArgumentationFrameworkTest.cpp
-│   ├── auto_tests.cpp
-├── results/         # Contient les résultats des tests automatiques
-│   ├── results.csv
 └── README.md        
 ```
 
