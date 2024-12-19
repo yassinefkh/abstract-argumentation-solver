@@ -22,7 +22,7 @@ La structure du projet est la suivante :
 │   ├── Parser.cpp
 │   ├── utility.cpp
 │   ├── main.cpp
-│   ├── testsGraph.cpp
+│   ├── auto_tests.cpp
 ├── af/              # Contient les fichiers de test (.txt) décrivant les cadres argumentatifs
 │   ├── test_af1.txt
 │   ├── test_af2.txt
@@ -46,7 +46,7 @@ La structure du projet est la suivante :
    - Vérifient les propriétés fondamentales des approches sur des graphes d'argumentation bien définis.
 
 3. **Tests automatiques :**
-   - Fichier `tests/auto_tests.cpp` : Génère des graphes aléatoires avec différentes tailles et densités d'attaques, exécute toutes les commandes et sauvegarde les résultats dans `results/results.csv`.
+   - Fichier `src/auto_tests.cpp` : Génère des graphes aléatoires avec différentes tailles et densités d'attaques, exécute toutes les commandes et sauvegarde les résultats dans `results/results.csv`.
 
 ---
 
