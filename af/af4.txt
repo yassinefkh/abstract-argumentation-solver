@@ -1,6 +1,0 @@
-arg(a).
-arg(b).
-arg(c).
-att(c,a).
-att(b,a).
-att(a,b).
