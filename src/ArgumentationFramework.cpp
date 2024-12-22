@@ -266,41 +266,58 @@ bool ArgumentationFramework::isSkepticalStable(const std::string& argument, int&
 // Applique la fonction caractéristique pour calculer les arguments défendus par un ensemble donné
 // Retourne l'ensemble des arguments défendus par l'ensemble S
 std::set<std::string> ArgumentationFramework::characteristicFunction(const std::set<std::string>& S) const {
-    // initialise un ensemble pour stocker les arguments défendus
-    std::set<std::string> defendedArguments;
+    std::set<std::string> defendedArguments; // ensemble des arguments défendus
+    std::set<std::string> visited; // ensemble pour suivre les arguments déjà visités
 
-    // parcourt chaque argument de l'AF
-    for (const auto& arg : arguments) {
-        bool defended = true; // initialise à vrai pour chaque argument
+    auto isDefended = [&](const std::string& arg, const std::string& attacker) -> bool {
+        // défense directe par un membre de S
+        for (const auto& defender : S) {
+            if (attackMatrix[argumentIndices.at(defender)][argumentIndices.at(attacker)]) {
+                std::cout << "    " << arg << " defended by " << defender << " (directly)\n";
+                return true;
+            }
+        }
+        // defense transitive
+        if (defendedArguments.find(attacker) != defendedArguments.end()) {
+            std::cout << "    " << arg << " defended by " << attacker << " (indirectly via transitivity)\n";
+            return true;
+        }
+        return false;
+    };
 
-        // vérifie si l'argument est attaqué par un autre argument
-        for (size_t i = 0; i < arguments.size(); ++i) {
-            if (attackMatrix[i][argumentIndices.at(arg)]) {
-                bool defendedByS = false;
+    bool progress = true;
+    while (progress) {
+        progress = false;
 
-                // vérifie si l'argument est défendu par au moins un argument de l'ensemble S
-                for (const auto& defender : S) {
-                    if (attackMatrix[argumentIndices.at(defender)][i]) {
-                        defendedByS = true; // trouve un défenseur
+        for (const auto& arg : arguments) { // pour chaque argument
+            if (visited.find(arg) != visited.end()) continue; // ignorer les arguments déjà traités
+
+            bool defended = true;
+            for (size_t i = 0; i < arguments.size(); ++i) {
+                if (attackMatrix[i][argumentIndices.at(arg)]) { // si l'argument est attaqué
+                    if (!isDefended(arg, arguments[i])) {
+                        defended = false;
                         break;
                     }
                 }
-                // si aucun défenseur n'est trouvé, marque l'argument comme non défendu
-                if (!defendedByS) {
-                    defended = false;
-                    break;
-                }
+            }
+
+            if (defended) {
+                defendedArguments.insert(arg); // ajouter aux arguments défendus
+                visited.insert(arg); // marquer comme traité
+                progress = true; // indiquer qu'un progrès a été réalisé
+                std::cout << "  Added to defended arguments: " << arg << "\n";
+            } else {
+                std::cout << "  Not added to defended arguments: " << arg << "\n";
             }
         }
-
-        // ajoute l'argument à l'ensemble défendu s'il est défendu
-        if (defended) {
-            defendedArguments.insert(arg);
-        }
     }
-    // retourne l'ensemble des arguments défendus
+
     return defendedArguments;
 }
+
+
+
 
 // Vérifie si un argument est acceptablement crédule pour les extensions complètes
 // Utilise la fonction caractéristique pour explorer les points fixes correspondant aux extensions complètes
@@ -310,26 +327,26 @@ bool ArgumentationFramework::isCredulousCompletePlus(const std::string& argument
     std::vector<std::set<std::string>> visitedExtensions;
 
     // fonction récursive pour explorer les extensions complètes
-    std::function<bool(std::set<std::string>)> exploreComplete = [&](std::set<std::string> current) {
-        counter++;  // incrémente le compteur pour chaque exploration
-        auto next = characteristicFunction(current);  // applique la fonction caractéristique
+std::function<bool(std::set<std::string>)> exploreComplete = [&](std::set<std::string> current) {
+    counter++;  
+    auto next = characteristicFunction(current);  
 
-        // vérifie si on a trouvé un point fixe
-        if (next == current) { 
-            // si l'extension n'a pas encore été visitée, on l'ajoute aux extensions visitées
-            if (std::find(visitedExtensions.begin(), visitedExtensions.end(), next) == visitedExtensions.end()) {
-                visitedExtensions.push_back(next);
-                // vérifie si l'argument est présent dans l'extension
-                if (next.find(argument) != next.end()) {
-                    return true;
-                }
-            }
-            return false; // retourne faux si l'argument n'est pas dans l'extension
-        }
+    // Ajout de debug
+    std::cout << "Exploring: ";
+    for (const auto& arg : current) std::cout << arg << " ";
+    std::cout << "\nNext: ";
+    for (const auto& arg : next) std::cout << arg << " ";
+    std::cout << "\n";
 
-        // continue l'exploration si l'ensemble actuel n'a pas encore été visité
-        return exploreComplete(next);
-    };
+    if (next == current) {
+        std::cout << "Point fixe atteint : ";
+        for (const auto& arg : next) std::cout << arg << " ";
+        std::cout << "\n";
+        return next.find(argument) != next.end();
+    }
+    return exploreComplete(next);
+};
+
     // démarre l'exploration pour chaque argument dans le graphe
     for (const auto& arg : arguments) {
         std::set<std::string> startSet = {arg}; // initialise avec un seul argument
