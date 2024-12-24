@@ -81,9 +81,6 @@ public:
 
 private:
   
-    bool backtrackForStableExtension(std::set<std::string> currentExtension,
-                                     std::set<std::string>& stableExtension,
-                                     std::set<std::string>& visitedArguments) const;
 
     std::unordered_map<std::string, int> argumentIndices;  // mapping argument/index
     std::vector<std::string> arguments;                    // liste des arguments
