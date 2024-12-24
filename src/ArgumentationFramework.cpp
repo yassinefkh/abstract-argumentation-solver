@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <unordered_map>
 #include <queue>
+#include <numeric>
+#include <random>
+
 
 // ------------------------------------
 // AJOUT D'ARGUMENTS ET ATTAQUES
@@ -134,130 +137,271 @@ bool ArgumentationFramework::isStable(const std::set<std::string>& extension) co
 // ENUMERATION NAIVE DES EXTENSIONS
 // ------------------------------------
 
+
 std::vector<std::set<std::string>> ArgumentationFramework::enumerateCompleteExtensions(int& counter) const {
-    counter = 0; // compteur pour suivre le nombre d'ensembles explorés
-    std::vector<std::set<std::string>> extensions; // stocke les extensions complètes trouvées
-    size_t n = arguments.size(); // nombre total d'arguments dans le système
+    counter = 0;
+    std::vector<std::set<std::string>> extensions;
+    size_t n = arguments.size();
 
-    // parcourt tous les sous-ensembles possibles d'arguments (2^n combinaisons)
-    for (size_t i = 0; i < (1 << n); ++i) {
-        counter++;
-        std::set<std::string> subset;
+    std::function<void(size_t, std::set<std::string>)> explore;
+    explore = [&](size_t index, std::set<std::string> current) {
+        if (index == n) {
+            counter++;
+            if (isComplete(current)) {
+                extensions.push_back(current);
+            }
+            return;
+        }
 
-        // construit le sous-ensemble correspondant au bitmask actuel
-        for (size_t j = 0; j < n; ++j) {
-            if (i & (1 << j)) subset.insert(arguments[j]); // ajoute l'argument si le bit est actif
+        // Ajout de l'argument actuel uniquement si cela maintient l'absence de conflits
+        current.insert(arguments[index]);
+        if (isConflictFree(current)) { // elagage sur l'absence de conflits
+            explore(index + 1, current);
         }
-        // vérifie si le sous-ensemble est une extension complète
-        if (isComplete(subset)) {
-            extensions.push_back(subset); // ajoute l'extension complète à la liste des résultats
-        }
-    }
-    return extensions; // on retourne la liste des extensions complètes
+        current.erase(arguments[index]); // Retour arrière
+
+        // Exploration sans ajouter l'argument actuel
+        explore(index + 1, current);
+    };
+
+    explore(0, {});
+    return extensions;
 }
 
-// de la même façon pour les extensions stables :
+
+
 std::vector<std::set<std::string>> ArgumentationFramework::enumerateStableExtensions(int& counter) const {
     counter = 0;
     std::vector<std::set<std::string>> extensions;
     size_t n = arguments.size();
 
-    for (size_t i = 0; i < (1 << n); ++i) {
-        counter++;
-        std::set<std::string> subset;
-        for (size_t j = 0; j < n; ++j) {
-            if (i & (1 << j)) subset.insert(arguments[j]);
+    // Fonction récursive pour explorer les extensions stables
+    std::function<void(size_t, std::set<std::string>)> explore;
+    explore = [&](size_t index, std::set<std::string> current) {
+        if (index == n) {
+            counter++;
+            // Vérifie si le sous-ensemble est stable
+            if (isStable(current)) {
+                extensions.push_back(current);
+            }
+            return;
         }
-        if (isStable(subset)) {
-            extensions.push_back(subset);
+
+        // Ajout de l'argument actuel
+        current.insert(arguments[index]);
+        if (isConflictFree(current)) { // Élagage si le sous-ensemble est conflictuel
+            explore(index + 1, current);
         }
-    }
-    return extensions; // retourne la liste des extensions stables
+        current.erase(arguments[index]); // Retour arrière
+
+        // Exploration sans ajouter l'argument actuel
+        explore(index + 1, current);
+    };
+
+    explore(0, {});
+    return extensions;
 }
+
+
 
 std::set<std::string> ArgumentationFramework::findOneCompleteExtension(int& counter) const {
-    auto extensions = enumerateCompleteExtensions(counter);
-    if (!extensions.empty()) {
-        std::srand(static_cast<unsigned>(std::time(nullptr)));
-        return extensions[std::rand() % extensions.size()];
-    }
-    return {};
+    size_t n = arguments.size();
+    counter = 0;
+
+    std::set<std::string> result;
+
+    std::function<bool(size_t, std::set<std::string>)> explore;
+    explore = [&](size_t index, std::set<std::string> current) {
+        if (index == n) {
+            counter++;
+            if (isComplete(current)) {
+                result = current; // Stocke la première extension complète trouvée
+                return true; // Arrête l'exploration
+            }
+            return false;
+        }
+
+        // Ajoute l'argument actuel et continue l'exploration
+        current.insert(arguments[index]);
+        if (isConflictFree(current) && explore(index + 1, current)) {
+            return true;
+        }
+        current.erase(arguments[index]); // Retour arrière
+
+        // Explore sans ajouter l'argument actuel
+        return explore(index + 1, current);
+    };
+
+    explore(0, {});
+    return result; // Retourne l'extension trouvée ou un ensemble vide si aucune n'est trouvée
 }
 
+
 std::set<std::string> ArgumentationFramework::findOneStableExtension(int& counter) const {
-    // génère toutes les extensions complètes et met à jour le compteur
-    auto extensions = enumerateStableExtensions(counter);
-    // vérifie si des extensions complètes ont été trouvées
-    if (!extensions.empty()) {
-        // initialise le générateur aléatoire avec le temps actuel pour garantir des résultats variés
-        std::srand(static_cast<unsigned>(std::time(nullptr)));
-        // sélectionne une extension complète au hasard parmi les résultats trouvés
-        return extensions[std::rand() % extensions.size()]; 
-        // ici on fait ça pour vérifier qu'on a bien les extensions qu'on veut et pas plus, mais on pourrait
-        // très bien se limiter qu'à UNE SEULE EXTENSION fixe trouvée !
-    }
-    return {};
+    size_t n = arguments.size();
+    counter = 0;
+
+    std::set<std::string> result;
+
+    std::function<bool(size_t, std::set<std::string>)> explore;
+    explore = [&](size_t index, std::set<std::string> current) {
+        if (index == n) {
+            counter++;
+            if (isStable(current)) {
+                result = current; // Stocke la première extension stable trouvée
+                return true; // Arrête l'exploration
+            }
+            return false;
+        }
+
+        // Ajoute l'argument actuel et continue l'exploration
+        current.insert(arguments[index]);
+        if (isConflictFree(current) && explore(index + 1, current)) {
+            return true;
+        }
+        current.erase(arguments[index]); // Retour arrière
+
+        // Explore sans ajouter l'argument actuel
+        return explore(index + 1, current);
+    };
+
+    explore(0, {});
+    return result; // Retourne l'extension trouvée ou un ensemble vide si aucune n'est trouvée
 }
+
 
 // ------------------------------------
 // APPROCHE NAIVE : CREDULOUS & SKEPTICAL
 // ------------------------------------
 
 bool ArgumentationFramework::isCredulousComplete(const std::string& argument, int& counter) const {
+    size_t n = arguments.size();
     counter = 0;
-    // génère toutes les extensions complètes
-    auto extensions = enumerateCompleteExtensions(counter);
-    // parcourt chaque extension trouvée
-    for (const auto& ext : extensions) {
-        // si l'argument est présent dans une extension, retourne vrai
-        if (ext.find(argument) != ext.end()) return true;
-    }
-    // retourne faux si l'argument n'est dans aucune extension complète
-    return false;
+
+    std::function<bool(size_t, std::set<std::string>)> explore;
+    explore = [&](size_t index, std::set<std::string> current) {
+        if (index == n) {
+            counter++;
+            if (isComplete(current) && current.find(argument) != current.end()) {
+                return true; // L'argument est trouvé dans une extension complète
+            }
+            return false;
+        }
+
+        // Ajoute l'argument actuel et continue l'exploration
+        current.insert(arguments[index]);
+        if (isConflictFree(current) && explore(index + 1, current)) {
+            return true;
+        }
+        current.erase(arguments[index]); // Retour arrière
+
+        // Explore sans ajouter l'argument actuel
+        return explore(index + 1, current);
+    };
+
+    return explore(0, {});
 }
+
 
 // Vérifie si un argument est sceptiquement acceptable dans toutes les extensions complètes
 // Retourne true si l'argument est présent dans toutes les extensions complètes, sinon false
 bool ArgumentationFramework::isSkepticalComplete(const std::string& argument, int& counter) const {
+    size_t n = arguments.size();
     counter = 0;
-    auto extensions = enumerateCompleteExtensions(counter);
 
-    // parcourt chaque extension trouvée
-    for (const auto& ext : extensions) {
-        // si l'argument est absent d'une extension, retourne faux
-        if (ext.find(argument) == ext.end()) return false;
-    }
-    // retourne true si l'argument est dans toutes les extensions complètes
-    return true;
+    std::function<bool(size_t, std::set<std::string>)> explore;
+    explore = [&](size_t index, std::set<std::string> current) {
+        if (index == n) {
+            counter++;
+            if (isComplete(current) && current.find(argument) == current.end()) {
+                return false; // L'argument est absent d'une extension complète
+            }
+            return true;
+        }
+
+        // Ajoute l'argument actuel et continue l'exploration
+        current.insert(arguments[index]);
+        if (isConflictFree(current) && !explore(index + 1, current)) {
+            return false;
+        }
+        current.erase(arguments[index]); // Retour arrière
+
+        // Explore sans ajouter l'argument actuel
+        if (!explore(index + 1, current)) {
+            return false;
+        }
+
+        return true;
+    };
+
+    return explore(0, {});
 }
 
 // Vérifie si un argument est crédulement acceptable dans au moins une extension stable
 // Retourne true si l'argument est présent dans au moins une extension stable, sinon false
 bool ArgumentationFramework::isCredulousStable(const std::string& argument, int& counter) const {
+    size_t n = arguments.size();
     counter = 0;
-    auto extensions = enumerateStableExtensions(counter);
-    // parcourt chaque extension trouvée
-    for (const auto& ext : extensions) {
-        // si l'argument est présent dans une extension, retourne vrai
-        if (ext.find(argument) != ext.end()) return true;
-    }
-    // retourne faux si l'argument n'est présent dans aucune extension stable
-    return false;
+
+    std::function<bool(size_t, std::set<std::string>)> explore;
+    explore = [&](size_t index, std::set<std::string> current) {
+        if (index == n) {
+            counter++;
+            if (isStable(current) && current.find(argument) != current.end()) {
+                return true; // L'argument est trouvé dans une extension stable
+            }
+            return false;
+        }
+
+        // Ajoute l'argument actuel et continue l'exploration
+        current.insert(arguments[index]);
+        if (isConflictFree(current) && explore(index + 1, current)) {
+            return true;
+        }
+        current.erase(arguments[index]); // Retour arrière
+
+        // Explore sans ajouter l'argument actuel
+        return explore(index + 1, current);
+    };
+
+    return explore(0, {});
 }
+
 
 // Vérifie si un argument est sceptiquement acceptable dans toutes les extensions stables
 // Retourne true si l'argument est présent dans toutes les extensions stables, sinon false
 bool ArgumentationFramework::isSkepticalStable(const std::string& argument, int& counter) const {
+    size_t n = arguments.size();
     counter = 0;
-    auto extensions = enumerateStableExtensions(counter);
-    // parcourt chaque extension trouvée
-    for (const auto& ext : extensions) {
-          // si l'argument est absent d'une extension, retourne faux
-        if (ext.find(argument) == ext.end()) return false;
-    }
-    // retourne vrai si l'argument est présent dans toutes les extensions stables
-    return true;
+
+    std::function<bool(size_t, std::set<std::string>)> explore;
+    explore = [&](size_t index, std::set<std::string> current) {
+        if (index == n) {
+            counter++;
+            if (isStable(current) && current.find(argument) == current.end()) {
+                return false; // L'argument est absent d'une extension stable
+            }
+            return true;
+        }
+
+        // Ajoute l'argument actuel et continue l'exploration
+        current.insert(arguments[index]);
+        if (isConflictFree(current) && !explore(index + 1, current)) {
+            return false;
+        }
+        current.erase(arguments[index]); // Retour arrière
+
+        // Explore sans ajouter l'argument actuel
+        if (!explore(index + 1, current)) {
+            return false;
+        }
+
+        return true;
+    };
+
+    return explore(0, {});
 }
+
 
 // ------------------------------------
 // APPROCHE FONCTION CARACTÉRISTIQUE
@@ -266,58 +410,41 @@ bool ArgumentationFramework::isSkepticalStable(const std::string& argument, int&
 // Applique la fonction caractéristique pour calculer les arguments défendus par un ensemble donné
 // Retourne l'ensemble des arguments défendus par l'ensemble S
 std::set<std::string> ArgumentationFramework::characteristicFunction(const std::set<std::string>& S) const {
-    std::set<std::string> defendedArguments; // ensemble des arguments défendus
-    std::set<std::string> visited; // ensemble pour suivre les arguments déjà visités
+    // initialise un ensemble pour stocker les arguments défendus
+    std::set<std::string> defendedArguments;
 
-    auto isDefended = [&](const std::string& arg, const std::string& attacker) -> bool {
-        // défense directe par un membre de S
-        for (const auto& defender : S) {
-            if (attackMatrix[argumentIndices.at(defender)][argumentIndices.at(attacker)]) {
-                std::cout << "    " << arg << " defended by " << defender << " (directly)\n";
-                return true;
-            }
-        }
-        // defense transitive
-        if (defendedArguments.find(attacker) != defendedArguments.end()) {
-            std::cout << "    " << arg << " defended by " << attacker << " (indirectly via transitivity)\n";
-            return true;
-        }
-        return false;
-    };
+    // parcourt chaque argument de l'AF
+    for (const auto& arg : arguments) {
+        bool defended = true; // initialise à vrai pour chaque argument
 
-    bool progress = true;
-    while (progress) {
-        progress = false;
+        // vérifie si l'argument est attaqué par un autre argument
+        for (size_t i = 0; i < arguments.size(); ++i) {
+            if (attackMatrix[i][argumentIndices.at(arg)]) {
+                bool defendedByS = false;
 
-        for (const auto& arg : arguments) { // pour chaque argument
-            if (visited.find(arg) != visited.end()) continue; // ignorer les arguments déjà traités
-
-            bool defended = true;
-            for (size_t i = 0; i < arguments.size(); ++i) {
-                if (attackMatrix[i][argumentIndices.at(arg)]) { // si l'argument est attaqué
-                    if (!isDefended(arg, arguments[i])) {
-                        defended = false;
+                // vérifie si l'argument est défendu par au moins un argument de l'ensemble S
+                for (const auto& defender : S) {
+                    if (attackMatrix[argumentIndices.at(defender)][i]) {
+                        defendedByS = true; // trouve un défenseur
                         break;
                     }
                 }
-            }
-
-            if (defended) {
-                defendedArguments.insert(arg); // ajouter aux arguments défendus
-                visited.insert(arg); // marquer comme traité
-                progress = true; // indiquer qu'un progrès a été réalisé
-                std::cout << "  Added to defended arguments: " << arg << "\n";
-            } else {
-                std::cout << "  Not added to defended arguments: " << arg << "\n";
+                // si aucun défenseur n'est trouvé, marque l'argument comme non défendu
+                if (!defendedByS) {
+                    defended = false;
+                    break;
+                }
             }
         }
-    }
 
+        // ajoute l'argument à l'ensemble défendu s'il est défendu
+        if (defended) {
+            defendedArguments.insert(arg);
+        }
+    }
+    // retourne l'ensemble des arguments défendus
     return defendedArguments;
 }
-
-
-
 
 // Vérifie si un argument est acceptablement crédule pour les extensions complètes
 // Utilise la fonction caractéristique pour explorer les points fixes correspondant aux extensions complètes
@@ -327,26 +454,26 @@ bool ArgumentationFramework::isCredulousCompletePlus(const std::string& argument
     std::vector<std::set<std::string>> visitedExtensions;
 
     // fonction récursive pour explorer les extensions complètes
-std::function<bool(std::set<std::string>)> exploreComplete = [&](std::set<std::string> current) {
-    counter++;  
-    auto next = characteristicFunction(current);  
+    std::function<bool(std::set<std::string>)> exploreComplete = [&](std::set<std::string> current) {
+        counter++;  // incrémente le compteur pour chaque exploration
+        auto next = characteristicFunction(current);  // applique la fonction caractéristique
 
-    // Ajout de debug
-    std::cout << "Exploring: ";
-    for (const auto& arg : current) std::cout << arg << " ";
-    std::cout << "\nNext: ";
-    for (const auto& arg : next) std::cout << arg << " ";
-    std::cout << "\n";
+        // vérifie si on a trouvé un point fixe
+        if (next == current) { 
+            // si l'extension n'a pas encore été visitée, on l'ajoute aux extensions visitées
+            if (std::find(visitedExtensions.begin(), visitedExtensions.end(), next) == visitedExtensions.end()) {
+                visitedExtensions.push_back(next);
+                // vérifie si l'argument est présent dans l'extension
+                if (next.find(argument) != next.end()) {
+                    return true;
+                }
+            }
+            return false; // retourne faux si l'argument n'est pas dans l'extension
+        }
 
-    if (next == current) {
-        std::cout << "Point fixe atteint : ";
-        for (const auto& arg : next) std::cout << arg << " ";
-        std::cout << "\n";
-        return next.find(argument) != next.end();
-    }
-    return exploreComplete(next);
-};
-
+        // continue l'exploration si l'ensemble actuel n'a pas encore été visité
+        return exploreComplete(next);
+    };
     // démarre l'exploration pour chaque argument dans le graphe
     for (const auto& arg : arguments) {
         std::set<std::string> startSet = {arg}; // initialise avec un seul argument
@@ -567,118 +694,218 @@ std::set<std::string> ArgumentationFramework::findStableExtensionPlus(int& count
 
 
 
-
 // ------------------------------------
 // APPROCHE LABELLING   
 // ------------------------------------
-
-// Vérifie si un graphe est acylique
-bool ArgumentationFramework::isAcyclic() const {
-    std::unordered_map<std::string, int> inDegree; // degré entrant des arguments
-    std::queue<std::string> q;
-
-    // initialisation des degrés entrants à 0
-    for (const auto& arg : arguments) {
-        inDegree[arg] = 0;
-    }
-
-    // calcul des degrés entrants à partir de la matrice des attaques
-    for (size_t i = 0; i < arguments.size(); ++i) {
-        for (size_t j = 0; j < arguments.size(); ++j) {
-            if (attackMatrix[i][j]) {
-                inDegree[arguments[j]]++;
-            }
-        }
-    }
-
-    // ajouter les arguments avec un degré entrant nul
-    for (const auto& [arg, degree] : inDegree) {
-        if (degree == 0) q.push(arg);
-    }
-
-    int visitedCount = 0; // nombre d'arguments visités
-    while (!q.empty()) {
-        auto current = q.front();
-        q.pop();
-        visitedCount++;
-
-        // met à jour les degrés entrants des voisins
-        for (size_t i = 0; i < arguments.size(); ++i) {
-            if (arguments[i] == current) {
-                for (size_t j = 0; j < arguments.size(); ++j) {
-                    if (attackMatrix[i][j]) {
-                        inDegree[arguments[j]]--;
-                        if (inDegree[arguments[j]] == 0) {
-                            q.push(arguments[j]);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // si tous les arguments sont visités, le graphe est acyclique
-    return static_cast<size_t>(visitedCount) == arguments.size();
-
-}
-
-
-// On calcule les étiquettes complètes pour chaque argument
-std::unordered_map<std::string, std::string> ArgumentationFramework::computeCompleteLabelling() const {
+std::unordered_map<std::string, std::string> ArgumentationFramework::labellingComplet(int& stateCounter) const {
+    // initialisation des labels
     std::unordered_map<std::string, std::string> labels;
-
-    // initialiser tous les arguments comme "undec"
     for (const auto& arg : arguments) {
         labels[arg] = "undec";
     }
 
-    bool changed = true;
-    while (changed) {
-        changed = false;
+    bool updated = true;
 
-        // parcourir chaque argument
-        for (size_t i = 0; i < arguments.size(); ++i) {
-            const std::string& arg = arguments[i];
+    // maj des labels
+    while (updated) {
+        updated = false;
 
+        for (const auto& arg : arguments) {
             if (labels[arg] == "undec") {
                 bool allAttackersOut = true;
+                bool hasAcceptedAttacker = false;
 
-                // parcourir les attaquants potentiels (colonne i dans attackMatrix)
-                for (size_t j = 0; j < arguments.size(); ++j) {
-                    if (attackMatrix[j][i]) { // j attaque i
-                        if (labels[arguments[j]] == "in") {
-                            labels[arg] = "out"; // argument attaqué par un "in"
-                            changed = true;
-                            break;
-                        }
-                        if (labels[arguments[j]] != "out") {
+                for (size_t i = 0; i < arguments.size(); ++i) {
+                    if (attackMatrix[i][argumentIndices.at(arg)]) {
+                        if (labels[arguments[i]] == "undec") {
                             allAttackersOut = false;
+                        } else if (labels[arguments[i]] == "in") {
+                            hasAcceptedAttacker = true;
+                            break;
                         }
                     }
                 }
 
-                // si tous les attaquants sont "out", marquer l'argument comme "in"
-                if (allAttackersOut && labels[arg] == "undec") {
+                if (allAttackersOut && !hasAcceptedAttacker) {
                     labels[arg] = "in";
-                    changed = true;
+                    updated = true;
+                } else if (hasAcceptedAttacker) {
+                    labels[arg] = "out";
+                    updated = true;
                 }
             }
+        }
+    }
+
+    //  y a t il encore des arguments undec ?
+    bool hasUndec = std::any_of(labels.begin(), labels.end(), [](const auto& entry) {
+        return entry.second == "undec";
+    });
+
+    if (hasUndec) {
+        // backtracking pour résoudre les arguments restants
+        std::function<bool(size_t)> backtrack = [&](size_t idx) {
+            stateCounter++; 
+
+            if (idx == arguments.size()) {
+                // vérfication de cohérence du labelling
+                for (size_t i = 0; i < arguments.size(); ++i) {
+                    const auto& arg = arguments[i];
+                    if (labels[arg] == "in") {
+                        for (size_t j = 0; j < arguments.size(); ++j) {
+                            if (attackMatrix[j][i] && labels[arguments[j]] != "out") {
+                                return false; // incohérence
+                            }
+                        }
+                    } else if (labels[arg] == "out") {
+                        bool defended = false;
+                        for (size_t j = 0; j < arguments.size(); ++j) {
+                            if (attackMatrix[j][i] && labels[arguments[j]] == "in") {
+                                defended = true;
+                                break;
+                            }
+                        }
+                        if (!defended) return false; // incohérence
+                    }
+                }
+                return true;
+            }
+
+            const auto& arg = arguments[idx];
+            if (labels[arg] == "undec") {
+                // essayer in
+                labels[arg] = "in";
+                if (backtrack(idx + 1)) return true;
+
+                // essayer out
+                labels[arg] = "out";
+                if (backtrack(idx + 1)) return true;
+
+                // reset
+                labels[arg] = "undec";
+            } else {
+                return backtrack(idx + 1);
+            }
+
+            return false;
+        };
+
+        if (!backtrack(0)) {
+            throw std::runtime_error("Backtracking failed.");
         }
     }
 
     return labels;
 }
 
-// Calcul les étiquettes stables pour chaque argument
-std::unordered_map<std::string, std::string> ArgumentationFramework::computeStableLabelling() const {
-    auto labels = computeCompleteLabelling();
 
-    // vérifie qu'il n'y a pas d'arguments étiquetés "undec"
-    for (const auto& [arg, label] : labels) {
-        if (label == "undec") {
-            return {}; // retourne vide si le labelling complet n'est pas stable
+std::unordered_map<std::string, std::string> ArgumentationFramework::labellingStable(int& stateCounter) const {
+    // initialisation des labels
+    std::unordered_map<std::string, std::string> labels;
+    for (const auto& arg : arguments) {
+        labels[arg] = "undec";
+    }
+
+    bool updated = true;
+
+    // maj des labels
+    while (updated) {
+        updated = false;
+
+        for (const auto& arg : arguments) {
+            if (labels[arg] == "undec") {
+                bool allAttackersOut = true;
+                bool hasAcceptedAttacker = false;
+
+                for (size_t i = 0; i < arguments.size(); ++i) {
+                    if (attackMatrix[i][argumentIndices.at(arg)]) {
+                        if (labels[arguments[i]] == "undec") {
+                            allAttackersOut = false;
+                        } else if (labels[arguments[i]] == "in") {
+                            hasAcceptedAttacker = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (allAttackersOut && !hasAcceptedAttacker) {
+                    labels[arg] = "in";
+                    updated = true;
+                } else if (hasAcceptedAttacker) {
+                    labels[arg] = "out";
+                    updated = true;
+                }
+            }
+        }
+    }
+
+    // y a t il encore des arguments undec ?
+    bool hasUndec = std::any_of(labels.begin(), labels.end(), [](const auto& entry) {
+        return entry.second == "undec";
+    });
+
+    if (hasUndec) {
+        // backtracking pour résoudre les arguments restants
+        std::function<bool(size_t)> backtrack = [&](size_t idx) {
+            stateCounter++; // Incrémenter le compteur d'états
+
+            if (idx == arguments.size()) {
+                // verification de cohérence du labelling
+                for (size_t i = 0; i < arguments.size(); ++i) {
+                    const auto& arg = arguments[i];
+                    if (labels[arg] == "in") {
+                        for (size_t j = 0; j < arguments.size(); ++j) {
+                            if (attackMatrix[j][i] && labels[arguments[j]] != "out") {
+                                return false; // incohérence
+                            }
+                        }
+                    } else if (labels[arg] == "out") {
+                        // verification pour stabilité : chaque OUT doit être attaqué
+                        bool attacked = false;
+                        for (size_t j = 0; j < arguments.size(); ++j) {
+                            if (attackMatrix[argumentIndices.at(arguments[j])][i] && labels[arguments[j]] == "in") {
+                                attacked = true;
+                                break;
+                            }
+                        }
+                        if (!attacked) return false; // non stable si un OUT n'est pas attaqué
+                    }
+                }
+                return true;
+            }
+
+            const auto& arg = arguments[idx];
+            if (labels[arg] == "undec") {
+                // essayer in
+                labels[arg] = "in";
+                if (backtrack(idx + 1)) return true;
+
+                // essayer out
+                labels[arg] = "out";
+                if (backtrack(idx + 1)) return true;
+
+                // réinitialiser
+                labels[arg] = "undec";
+            } else {
+                return backtrack(idx + 1);
+            }
+
+            return false;
+        };
+
+        if (!backtrack(0)) {
+            throw std::runtime_error("Backtracking failed.");
         }
     }
 
     return labels;
+}
+
+
+// Fonction pour afficher les résultats
+void ArgumentationFramework::displayLabelling(const std::unordered_map<std::string, std::string>& labels) const {
+    std::cout << "Labelling results:\n";
+    for (const auto& [arg, label] : labels) {
+        std::cout << "Argument " << arg << " is " << label << "\n";
+    }
 }

@@ -124,6 +124,13 @@
     "__hash_table": "cpp",
     "cmath": "cpp",
     "complex": "cpp",
-    "filesystem": "cpp"
+    "filesystem": "cpp",
+    "map": "cpp",
+    "future": "cpp",
+    "numeric": "cpp",
+    "random": "cpp",
+    "regex": "cpp",
+    "csignal": "cpp",
+    "queue": "cpp"
   }
 }

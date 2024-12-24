@@ -15,6 +15,7 @@ void verifyCompleteExtensions(const ArgumentationFramework &af, const std::vecto
     int counter = 0;
     auto completeExtensions = af.enumerateCompleteExtensions(counter);
     // vérifie si le nombre d'extensions complètes correspond à l'attendu
+    
     REQUIRE(completeExtensions.size() == expected.size());
     for (const auto &ext : expected)
     {   
@@ -270,4 +271,3 @@ POUR LA COMPILATION :
 g++ -std=c++17 -o test_runner tests/ArgumentationFrameworkTest.cpp src/ArgumentationFramework.cpp src/utility.cpp -I include
 puis : ./test_runner
 */
-

@@ -1,0 +1,64 @@
+#include "minisat/core/Solver.h"
+#include <vector>
+#include <unordered_map>
+#include <iostream>
+
+void solveDCCOWithSAT(const std::vector<std::string>& arguments,
+                      const std::vector<std::pair<std::string, std::string>>& attacks,
+                      const std::string& query) {
+    Minisat::Solver solver;
+
+    // Map arguments to variables
+    std::unordered_map<std::string, Minisat::Var> vars;
+    for (const auto& arg : arguments) {
+        vars[arg] = solver.newVar();
+    }
+
+    // Add conflict-free clauses
+    for (const auto& [attacker, target] : attacks) {
+        solver.addClause(~Minisat::mkLit(vars[attacker]), ~Minisat::mkLit(vars[target]));
+    }
+
+    // Add admissibility clauses
+    for (const auto& arg : arguments) {
+        for (const auto& [attacker, target] : attacks) {
+            if (target == arg) {
+                solver.addClause(~Minisat::mkLit(vars[arg]), Minisat::mkLit(vars[attacker]));
+            }
+        }
+    }
+
+    // Add completeness clauses
+    for (const auto& arg : arguments) {
+        for (const auto& [attacker, target] : attacks) {
+            if (target == arg) {
+                solver.addClause(~Minisat::mkLit(vars[attacker]), Minisat::mkLit(vars[arg]));
+            }
+        }
+    }
+
+    // Add query clause
+    solver.addClause(Minisat::mkLit(vars[query]));
+
+    // Solve the SAT problem
+    if (solver.solve()) {
+        std::cout << "SAT: Argument " << query << " is in an extension." << std::endl;
+        for (const auto& [arg, var] : vars) {
+            std::cout << arg << " = " << (solver.modelValue(var) == Minisat::l_True ? "True" : "False") << std::endl;
+        }
+    } else {
+        std::cout << "UNSAT: Argument " << query << " is not in any extension." << std::endl;
+    }
+}
+
+int main() {
+    // Arguments and attacks
+    std::vector<std::string> arguments = {"A", "B", "C", "D", "E"};
+    std::vector<std::pair<std::string, std::string>> attacks = {
+        {"A", "B"}, {"B", "A"}, {"A", "C"}, {"C", "D"}, {"D", "E"}, {"E", "D"}};
+
+    // Solve DC-CO for argument "A"
+    solveDCCOWithSAT(arguments, attacks, "A");
+
+    return 0;
+}

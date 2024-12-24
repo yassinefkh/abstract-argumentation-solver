@@ -40,6 +40,8 @@ public:
     std::vector<std::set<std::string>> enumerateCompleteExtensions(int& counter) const;
     std::vector<std::set<std::string>> enumerateStableExtensions(int& counter) const;
 
+    
+
     // ------------------------------
     // RECHERCHE D'UNE EXTENSION (NAIVE ET OPTIMISEE)
     // ------------------------------
@@ -66,9 +68,9 @@ public:
     // ------------------------------
     // LABELLING
     // ------------------------------
-    bool isAcyclic() const;
-    std::unordered_map<std::string, std::string> computeCompleteLabelling() const;
-    std::unordered_map<std::string, std::string> computeStableLabelling() const;
+    std::unordered_map<std::string, std::string> labellingComplet(int& stateCounter) const;
+    std::unordered_map<std::string, std::string> labellingStable(int& stateCounter) const;
+    void displayLabelling(const std::unordered_map<std::string, std::string>& labels) const;
     
 
     // ------------------------------

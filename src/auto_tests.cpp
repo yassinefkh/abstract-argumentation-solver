@@ -9,7 +9,7 @@
 std::vector<std::vector<std::string>> results;
 std::string outputFilename = "results.csv";
 
-// Fonction pour sauvegarder les résultats partiels
+// fonction pour sauvegarder les résultats partiels
 void savePartialResults() {
     std::cerr << "Saving partial results to " << outputFilename << "...\n";
     std::ofstream file(outputFilename);
@@ -71,7 +71,7 @@ ArgumentationFramework generateRandomGraph(int numArguments, float density) {
 
     return af;
 }
-
+/* 
 int main() {
    
     std::signal(SIGSEGV, signalHandler);
@@ -137,7 +137,7 @@ int main() {
     return 0;
 }
 
-
+ */
 
 /*
 
