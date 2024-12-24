@@ -52,13 +52,18 @@ La structure du projet est la suivante :
 
 ## Compilation et Exécution
 
+### Prérequis
+
+> **Compilateur :** Assurez-vous d'avoir une version de `g++` compatible avec la norme `C++17` (par exemple, `g++ 7.3` ou plus récent).  
+> **Make :** Le fichier `Makefile` est inclus pour simplifier la compilation. Assurez-vous que l'outil `make` est installé sur votre système.
+
+
 ### Compilation
 
 Pour compiler le projet, utilisez la commande suivante :
 
 ```bash
 make
-./solver
 ```
 
 ### Exécution
