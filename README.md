@@ -24,8 +24,8 @@ La structure du projet est la suivante :
 │   ├── main.cpp
 │   ├── auto_tests.cpp
 ├── af/              # Contient les fichiers de test (.txt) décrivant les cadres argumentatifs
-│   ├── test_af1.txt
-│   ├── test_af2.txt
+│   ├── af1.txt
+│   ├── af2.txt
 │   ├── ...
 ├── tests/           # Tests unitaires et automatiques
 │   ├── ArgumentationFrameworkTest.cpp
@@ -101,7 +101,7 @@ Les fichiers doivent suivre le format suivant :
 - **Arguments** : `arg(X).` où `X` est le nom de l'argument.
 - **Attaques** : `att(X, Y).` où `X` attaque `Y`.
 
-Exemple de fichier `af/test_af1.txt` :
+Exemple de fichier `af/af_test.txt` :
 
 ```
 arg(A).
