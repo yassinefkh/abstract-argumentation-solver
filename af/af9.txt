@@ -1,7 +1,0 @@
-arg(A).
-arg(B).
-arg(C).
-att(A,B).
-att(C,A).
-att(B,C).
-att(C,B).
