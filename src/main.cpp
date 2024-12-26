@@ -33,9 +33,6 @@ int main(int argc, char *argv[]) {
             } else {
                 std::cout << "NO\n";
             }
-            //std::cout << "States explored: " << bruteForceCounter << "\n";
-
-
 
         } else if (command == "SE-ST") {
             int bruteForceCounter = 0;
@@ -50,7 +47,7 @@ int main(int argc, char *argv[]) {
             } else {
                 std::cout << "NO\n";
             }
-            std::cout << "States explored: " << bruteForceCounter << "\n";
+        
 
         } else if (command == "DC-CO") {
             if (argument.empty()) {
@@ -61,7 +58,7 @@ int main(int argc, char *argv[]) {
             int bruteForceCounter = 0;
             bool resultBrute = af.isCredulousComplete(argument, bruteForceCounter);
             std::cout << (resultBrute ? "YES\n" : "NO\n");
-            std::cout << "States explored: " << bruteForceCounter << "\n";
+        
 
         } else if (command == "DS-CO") {
             if (argument.empty()) {
@@ -72,7 +69,7 @@ int main(int argc, char *argv[]) {
             int bruteForceCounter = 0;
             bool bruteForceResult = af.isSkepticalComplete(argument, bruteForceCounter);
             std::cout << (bruteForceResult ? "YES\n" : "NO\n");
-            std::cout << "States explored: " << bruteForceCounter << "\n";
+           
 
         } else if (command == "DC-ST") {
             if (argument.empty()) {
@@ -83,8 +80,7 @@ int main(int argc, char *argv[]) {
             int bruteForceCounter = 0;
             bool resultBrute = af.isCredulousStable(argument, bruteForceCounter);
             std::cout << (resultBrute ? "YES\n" : "NO\n");
-            std::cout << "States explored: " << bruteForceCounter << "\n";
-
+    
         } else if (command == "DS-ST") {
             if (argument.empty()) {
                 std::cerr << "Error: Argument required for DS-ST.\n";
@@ -94,7 +90,6 @@ int main(int argc, char *argv[]) {
             int bruteForceCounter = 0;
             bool resultBrute = af.isSkepticalStable(argument, bruteForceCounter);
             std::cout << (resultBrute ? "YES\n" : "NO\n");
-            std::cout << "States explored: " << bruteForceCounter << "\n";
 
         } else {
             std::cerr << "Error: Unknown command '" << command << "'.\n";
